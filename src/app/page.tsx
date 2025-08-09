@@ -1,103 +1,141 @@
-import Image from "next/image";
+"use client";
+import React, { useState, useEffect } from "react";
+import Navbar from "./components/navbar";
+import DataVerificationPanel from "./components/MainPage";
+import MeterParameterList from "./components/MeterParameterList";
+import { RiArrowDropDownLine } from "react-icons/ri";
+import { Listbox } from "@headlessui/react";
+import SearchBar from "./components/Search";
+import { parameters } from "./components/data";
+import { fetchMeters } from "./components/actions/fetchmeters"; // Adjust the import path as necessary
+interface Meter {
+  id: string;  // from unique_key
+  name: string; // from meter_name
+  location: string;
+}
 
-export default function Home() {
+const Page = () => {
+  const [selectedMeter, setSelectedMeter] = useState<string>("");
+  const [meters, setMeters] = useState<Meter[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  // Async function to fetch data
+  const fetchMeters = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("http://localhost:3000/api/meters/", {
+        method: "GET",
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        console.log("Fetched meters:", data);
+
+        // Map API data to our Meter type
+        setMeters(
+          data.map((m: any) => ({
+            id: m.meter_name,
+            name: m.meter_name,   
+            location: m.location, 
+          }))
+        );
+      }
+    } catch (err) {
+      console.error("Error fetching meters:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMeters();
+  }, []);
+  // const meter = fetchMeters();
+
+  // console.log(meter);
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <>
+      <Navbar />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      <main className="flex items-start justify-center pt-2 sm:pt-4">
+        <div className="relative w-[98%] sm:w-[97%] h-[90vh] sm:h-[87vh]">
+          <div className="absolute top-[3px] left-0 right-0 bottom-0 bg-white shadow-md border-t-3 border-[#265F95] z-10 overflow-hidden flex flex-col rounded-md">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-8 pt-4 sm:pt-8 gap-4">
+              <div>
+                <h2 className="text-lg sm:text-xl font-bold text-[#265F95]">
+                  Data Verification Panel
+                </h2>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                  Select a meter from dropdown to verify and update the status
+                  of individual data parameters.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <label
+                    htmlFor="meter"
+                    className="text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap"
+                  >
+                    Select Meter:
+                  </label>
+
+                  {/* Dropdown */}
+                  <div className="relative w-full sm:w-48">
+                    {loading ? (
+                      <p className="text-xs text-gray-500">Loading...</p>
+                    ) : (
+                      <Listbox value={selectedMeter} onChange={setSelectedMeter}>
+                        <div className="relative">
+                          <Listbox.Button className="appearance-none border border-gray-300 rounded-[10px] px-3 sm:px-4 py-2 text-xs sm:text-sm bg-white text-black w-full flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            {meters.find((m) => m.id === selectedMeter)?.name || "-- Select --"}
+                            <RiArrowDropDownLine className="ml-2 text-xl" />
+                          </Listbox.Button>
+                          <Listbox.Options className="absolute mt-1 max-h-48 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/10 focus:outline-none z-20">
+                            {meters.map((meter) => (
+                              <Listbox.Option
+                                key={meter.id}
+                                value={meter.id}
+                                className={({ active }) =>
+                                  `cursor-pointer select-none relative py-2 pl-4 pr-4 ${
+                                    active
+                                      ? "bg-blue-100 text-blue-900"
+                                      : "text-gray-900"
+                                  }`
+                                }
+                              >
+                                {meter.name}
+                              </Listbox.Option>
+                            ))}
+                          </Listbox.Options>
+                        </div>
+                      </Listbox>
+                    )}
+                  </div>
+                </div>
+
+                {selectedMeter && (
+                  <div className="w-full sm:w-48">
+                    <SearchBar />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-auto">
+              {selectedMeter === "" ? (
+                <DataVerificationPanel />
+              ) : (
+                <MeterParameterList selectedMeter={selectedMeter} data={parameters}  location={meters.find(m => m.id === selectedMeter)?.location || ""} />
+              )}
+            </div>
+          </div>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+    </>
   );
-}
+};
+
+export default Page;
