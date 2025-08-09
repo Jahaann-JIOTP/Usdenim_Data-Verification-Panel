@@ -147,7 +147,26 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({ selectedMeter, 
           </div>
           <div>
             <span className="font-medium text-gray-800">Last Updated:</span>{" "}
-            <span className="text-gray-600">{lastUpdated || "Not updated yet"}</span>
+            <span className="text-[#265F95]">{lastUpdated || "Not updated yet"}</span>
+          </div>
+          <div>
+            <span className="font-medium text-gray-800">Unique ID:</span>{" "}
+            <span className="text-[#265F95]">{"921"}</span>
+
+          </div>
+           <div>
+            <span className="font-medium text-gray-800">PT Ratio:</span>{" "}
+            <span className="text-[#265F95]">{"470.5"}</span>
+
+          </div>
+           <div>
+            <span className="font-medium text-gray-800">CT Ratio:</span>{" "}
+            <span className="text-[#265F95]">{"921"}</span>
+
+          </div>
+           <div>
+            <span className="font-medium text-gray-800">Modbus ID:</span>{" "}
+            <span className="text-[#265F95]">{"921"}</span>
           </div>
         </div>
 

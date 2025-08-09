@@ -9,8 +9,8 @@ import SearchBar from "./components/Search";
 import { parameters } from "./components/data";
 import { fetchMeters } from "./components/actions/fetchmeters"; // Adjust the import path as necessary
 interface Meter {
-  id: string;  // from unique_key
-  name: string; // from meter_name
+  id: string; 
+  name: string; 
   location: string;
 }
 
@@ -24,7 +24,8 @@ const Page = () => {
     setLoading(true);
     try {
       const res = await fetch("http://localhost:3000/api/meters/", {
-        method: "GET",
+        
+        method: 'GET'
       });
 
       const data = await res.json();
@@ -85,7 +86,7 @@ const Page = () => {
                   {/* Dropdown */}
                   <div className="relative w-full sm:w-48">
                     {loading ? (
-                      <p className="text-xs text-gray-500">Loading...</p>
+                      <p className="text-xs text-gray-500">loading...</p>
                     ) : (
                       <Listbox value={selectedMeter} onChange={setSelectedMeter}>
                         <div className="relative">
@@ -128,7 +129,7 @@ const Page = () => {
               {selectedMeter === "" ? (
                 <DataVerificationPanel />
               ) : (
-                <MeterParameterList selectedMeter={selectedMeter} data={parameters}  location={meters.find(m => m.id === selectedMeter)?.location || ""} />
+                <MeterParameterList selectedMeter={selectedMeter} data={parameters} location={meters.find(m => m.id === selectedMeter)?.location || ""} />
               )}
             </div>
           </div>
