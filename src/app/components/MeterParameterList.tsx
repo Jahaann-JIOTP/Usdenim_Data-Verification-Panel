@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { FaEdit as Edit, FaSave as Save } from "react-icons/fa";
+import { RotatingLines } from "react-loader-spinner";
 
 type ParameterStatus = "Verified" | "Not Verified" | "Not Sure" | "Not Used";
 
@@ -23,7 +24,7 @@ const statusOptions: ParameterStatus[] = [
   "Not Used",
 ];
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 10;
 
 const MeterParameterList: React.FC<MeterParameterListProps> = ({
   selectedMeter,
@@ -41,8 +42,11 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
     {}
   );
   const [lastFetchedTime, setLastFetchedTime] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(true); // New loading state
+  const [isRealTimeLoading, setIsRealTimeLoading] = useState<boolean>(true); // Loading state for real-time data
 
   const fetchRealTimeValues = async () => {
+    setIsRealTimeLoading(true);
     try {
       const response = await fetch("http://13.234.241.103:1880/surajcotton");
       if (!response.ok) throw new Error("Failed to fetch real-time data");
@@ -51,6 +55,8 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
       setLastFetchedTime(new Date().toLocaleTimeString());
     } catch (error) {
       console.error("Error fetching real-time data:", error);
+    } finally {
+      setIsRealTimeLoading(false);
     }
   };
 
@@ -62,6 +68,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
 
   useEffect(() => {
     const fetchSpecificMeterListing = async () => {
+      setIsLoading(true);
       try {
         const res = await fetch(`http://localhost:3000/api/meters/${uniqueKey}`);
         const apiData = await res.json();
@@ -76,6 +83,8 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
         }
       } catch (err) {
         console.error("Error fetching meters:", err);
+      } finally {
+        setIsLoading(false);
       }
     };
     if (uniqueKey) fetchSpecificMeterListing();
@@ -137,9 +146,10 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
   };
 
   const getRealTimeValue = (paramName: string) => {
+    if (isRealTimeLoading) return "Loading...";
     const key = `${uniqueKey}_${paramName}`.replace(/\s+/g, "_");
     return realTimeValues[key] !== undefined
-      ? realTimeValues[key].toFixed(3)
+      ? realTimeValues[key].toFixed(2)
       : "N/A";
   };
 
@@ -191,6 +201,9 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
         <table className="min-w-full sm:min-w-[500px] w-full border border-gray-200 text-center text-xs sm:text-sm">
           <thead className="bg-gray-100">
             <tr className="bg-[#02569738]">
+              <th className="p-2 text-[#004981] border whitespace-nowrap">
+                Serial No.
+              </th>
               <th className="p-2 sm:pl-[25px] sm:pr-10 border text-[#004981] whitespace-nowrap">
                 Parameter
               </th>
@@ -203,55 +216,74 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
             </tr>
           </thead>
           <tbody>
-            {pagedParameters.map((param, i) => (
-              <tr key={i} className="border-t hover:bg-gray-50">
-                <td className="p-2 sm:p-3 border whitespace-nowrap">
-                  {param.param}
-                </td>
-                <td className="p-2 border whitespace-nowrap">
-                  {getRealTimeValue(param.param)}
-                </td>
-                <td className="p-2 border">
-                  <div className="flex flex-nowrap justify-around gap-1 sm:gap-4">
-                    {statusOptions.map((option) => {
-                      const isSelected = param.status === option;
-                      return (
-                        <label
-                          key={option}
-                          className={`flex items-center gap-1 cursor-pointer ${getStatusColor(
-                            option,
-                            isSelected
-                          )}`}
-                        >
-                          <span
-                            className={`w-3 h-3 rounded-full ${getDotColor(
-                              option,
-                              isSelected
-                            )}`}
-                          ></span>
-                          <input
-                            type="radio"
-                            name={`status-${i}`}
-                            checked={isSelected}
-                            onChange={() => handleStatusChange(i, option)}
-                            className="hidden"
-                          />
-                          <span className="text-xs sm:text-sm font-medium">
-                            {option}
-                          </span>
-                        </label>
-                      );
-                    })}
+            {isLoading ? (
+              <tr className="height-[200px]">
+                <td colSpan={4} className="p-8">
+                  <div className="flex justify-center items-center h-[50vh]">
+                    <RotatingLines
+                      strokeColor="#265F95"
+                      strokeWidth="5"
+                      animationDuration="0.75"
+                      width="50"
+                      visible={true}
+                    />
                   </div>
                 </td>
               </tr>
-            ))}
+            ) : (
+              pagedParameters.map((param, i) => (
+                <tr key={i} className="border-t hover:bg-gray-50">
+                  <td className="p-2 border whitespace-nowrap">
+                    {(currentPage - 1) * PAGE_SIZE + i + 1}
+                  </td>
+                  <td className="p-2 sm:p-3 border whitespace-nowrap">
+                    {param.param}
+                  </td>
+                  <td className="p-2 border whitespace-nowrap">
+                    {getRealTimeValue(param.param)}
+                  </td>
+                  <td className="p-2 border">
+                    <div className="flex flex-nowrap justify-around gap-1 sm:gap-4">
+                      {statusOptions.map((option) => {
+                        const isSelected = param.status === option;
+                        return (
+                          <label
+                            key={option}
+                            className={`flex items-center gap-1 cursor-pointer ${getStatusColor(
+                              option,
+                              isSelected
+                            )}`}
+                          >
+                            <span
+                              className={`w-3 h-3 rounded-full ${getDotColor(
+                                option,
+                                isSelected
+                              )}`}
+                            ></span>
+                            <input
+                              type="radio"
+                              name={`status-${i}`}
+                              checked={isSelected}
+                              onChange={() => handleStatusChange(i, option)}
+                              className="hidden"
+                            />
+                            <span className="text-xs sm:text-sm font-medium">
+                              {option}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
 
       {/* Pagination */}
-      {pageCount > 1 && (
+      {!isLoading && pageCount > 1 && (
         <div className="flex flex-wrap justify-center items-center gap-2 mt-4">
           <button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
@@ -303,65 +335,67 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
       )}
 
       {/* Comment */}
-      <div className="mt-8 pt-6 border-t border-gray-200">
-        <div className="w-full">
-          <div className="flex flex-wrap justify-between items-center mb-2 gap-2">
-            <h3 className="text-base font-medium text-gray-600">
-              Add comment (for this Meter)
-            </h3>
+      {!isLoading && (
+        <div className="mt-8 pt-6 border-t border-gray-200">
+          <div className="w-full">
+            <div className="flex flex-wrap justify-between items-center mb-2 gap-2">
+              <h3 className="text-base font-medium text-gray-600">
+                Add comment (for this Meter)
+              </h3>
+              {isEditingComment ? (
+                <button
+                  onClick={() => {
+                    setComments((prev) => ({
+                      ...prev,
+                      [currentPage]: comment,
+                    }));
+                    setIsEditingComment(false);
+                  }}
+                  className="text-[#265F95] hover:text-blue-700 flex items-center gap-1 text-sm font-medium"
+                >
+                  <Save className="w-4 h-4" />
+                  Save
+                </button>
+              ) : comments[currentPage] ? (
+                <button
+                  onClick={() => {
+                    setComment(comments[currentPage]);
+                    setIsEditingComment(true);
+                  }}
+                  className="text-[#265F95] hover:text-blue-700 flex items-center gap-1 text-sm font-medium"
+                >
+                  <Edit className="w-4 h-4" />
+                  Edit
+                </button>
+              ) : null}
+            </div>
+
             {isEditingComment ? (
-              <button
-                onClick={() => {
-                  setComments((prev) => ({
-                    ...prev,
-                    [currentPage]: comment,
-                  }));
-                  setIsEditingComment(false);
-                }}
-                className="text-[#265F95] hover:text-blue-700 flex items-center gap-1 text-sm font-medium"
-              >
-                <Save className="w-4 h-4" />
-                Save
-              </button>
+              <textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-black focus:outline-none focus:ring-1 focus:ring-[#265F95] min-h-[6rem] resize-y"
+                placeholder="Type your comment here..."
+                autoFocus
+              />
             ) : comments[currentPage] ? (
+              <div className="border border-transparent px-3 py-2 rounded min-h-[6rem] whitespace-pre-wrap bg-gray-50">
+                {comments[currentPage]}
+              </div>
+            ) : (
               <button
                 onClick={() => {
-                  setComment(comments[currentPage]);
+                  setComment("");
                   setIsEditingComment(true);
                 }}
-                className="text-[#265F95] hover:text-blue-700 flex items-center gap-1 text-sm font-medium"
+                className="text-[#265F95] hover:text-blue-700 text-sm font-medium hover:underline"
               >
-                <Edit className="w-4 h-4" />
-                Edit
+                + Add comment
               </button>
-            ) : null}
+            )}
           </div>
-
-          {isEditingComment ? (
-            <textarea
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-black focus:outline-none focus:ring-1 focus:ring-[#265F95] min-h-[6rem] resize-y"
-              placeholder="Type your comment here..."
-              autoFocus
-            />
-          ) : comments[currentPage] ? (
-            <div className="border border-transparent px-3 py-2 rounded min-h-[6rem] whitespace-pre-wrap bg-gray-50">
-              {comments[currentPage]}
-            </div>
-          ) : (
-            <button
-              onClick={() => {
-                setComment("");
-                setIsEditingComment(true);
-              }}
-              className="text-[#265F95] hover:text-blue-700 text-sm font-medium hover:underline"
-            >
-              + Add comment
-            </button>
-          )}
         </div>
-      </div>
+      )}
     </div>
   );
 };
