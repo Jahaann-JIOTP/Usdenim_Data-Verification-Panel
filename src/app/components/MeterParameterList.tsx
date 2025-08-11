@@ -1,12 +1,11 @@
 "use client";
-import React, { useState, useRef, useEffect } from "react";
-import { ChevronDown, Check, Edit, Save } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { FaEdit as Edit, FaSave as Save } from "react-icons/fa";
 
 type ParameterStatus = "Verified" | "Not Verified" | "Not Sure" | "Not Used";
 
 interface Parameter {
   param: string;
-  value: string;
   status: ParameterStatus;
 }
 
@@ -14,6 +13,7 @@ interface MeterParameterListProps {
   selectedMeter: string;
   data: Parameter[];
   location: string;
+  uniqueKey: string;
 }
 
 const statusOptions: ParameterStatus[] = [
@@ -23,21 +23,69 @@ const statusOptions: ParameterStatus[] = [
   "Not Used",
 ];
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 5;
 
-const MeterParameterList: React.FC<MeterParameterListProps> = ({ selectedMeter, data, location }) => {
+const MeterParameterList: React.FC<MeterParameterListProps> = ({
+  selectedMeter,
+  data,
+  location,
+  uniqueKey,
+}) => {
   const [parameters, setParameters] = useState<Parameter[]>(data);
-  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string>("");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [comments, setComments] = useState<Record<number, string>>({});
   const [comment, setComment] = useState<string>("");
   const [isEditingComment, setIsEditingComment] = useState<boolean>(false);
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
-  
-  const tableRef = useRef<HTMLTableElement>(null);
-  const dropdownRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const triggerRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [realTimeValues, setRealTimeValues] = useState<Record<string, number>>(
+    {}
+  );
+  const [lastFetchedTime, setLastFetchedTime] = useState<string>("");
+
+  const fetchRealTimeValues = async () => {
+    try {
+      const response = await fetch("http://13.234.241.103:1880/surajcotton");
+      if (!response.ok) throw new Error("Failed to fetch real-time data");
+      const data = await response.json();
+      setRealTimeValues(data);
+      setLastFetchedTime(new Date().toLocaleTimeString());
+    } catch (error) {
+      console.error("Error fetching real-time data:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchRealTimeValues();
+    const interval = setInterval(fetchRealTimeValues, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const fetchSpecificMeterListing = async () => {
+      try {
+        const res = await fetch(`http://localhost:3000/api/meters/${uniqueKey}`);
+        const apiData = await res.json();
+        if (res.ok && apiData?.parameters) {
+          const dynamicParams: Parameter[] = apiData.parameters.map(
+            (p: any) => ({
+              param: p.paramName,
+              status: (p.status || "Not Verified") as ParameterStatus,
+            })
+          );
+          setParameters(dynamicParams);
+        }
+      } catch (err) {
+        console.error("Error fetching meters:", err);
+      }
+    };
+    if (uniqueKey) fetchSpecificMeterListing();
+  }, [uniqueKey]);
+
+  // Update comment state when page changes
+  useEffect(() => {
+    setComment(comments[currentPage] || "");
+    setIsEditingComment(false);
+  }, [currentPage]);
 
   const pageCount = Math.ceil(parameters.length / PAGE_SIZE);
   const pagedParameters = parameters.slice(
@@ -45,294 +93,240 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({ selectedMeter, 
     currentPage * PAGE_SIZE
   );
 
-  const groupedParameters = [];
-  for (let i = 0; i < pagedParameters.length; i += 3) {
-    groupedParameters.push(pagedParameters.slice(i, i + 3));
-  }
-
-  const savedComment = comments[currentPage] || "";
-
-  const getCurrentTime = () => {
-    return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  };
+  const getCurrentTime = () =>
+    new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   const handleStatusChange = (index: number, newStatus: ParameterStatus) => {
     const newParameters = [...parameters];
-    newParameters[index].status = newStatus;
+    const absoluteIndex = (currentPage - 1) * PAGE_SIZE + index;
+    newParameters[absoluteIndex].status = newStatus;
     setParameters(newParameters);
-    setOpenDropdownId(null);
     setLastUpdated(getCurrentTime());
   };
 
-  const toggleDropdown = (index: number, event: React.MouseEvent) => {
-    event.stopPropagation();
-    if (triggerRefs.current[index]) {
-      const rect = triggerRefs.current[index]!.getBoundingClientRect();
-      setDropdownPosition({
-        top: rect.bottom + window.scrollY,
-        left: rect.left + window.scrollX
-      });
+  const getStatusColor = (status: ParameterStatus, isSelected: boolean) => {
+    if (!isSelected) return "text-gray-500";
+    switch (status) {
+      case "Verified":
+        return "text-green-600";
+      case "Not Verified":
+        return "text-red-600";
+      case "Not Sure":
+        return "text-blue-600";
+      case "Not Used":
+        return "text-yellow-600";
+      default:
+        return "text-gray-500";
     }
-    setOpenDropdownId(openDropdownId === index ? null : index);
   };
 
-  const getStatusColor = (status: ParameterStatus) => {
-    const colors = {
-      "Verified": "text-green-600",
-      "Not Verified": "text-gray-500",
-      "Not Sure": "text-blue-500",
-      "Not Used": "text-yellow-600"
-    };
-    return colors[status];
-  };
-
-  const handleCommentSave = () => {
-    setComments(prev => ({ ...prev, [currentPage]: comment }));
-    setIsEditingComment(false);
-    setLastUpdated(getCurrentTime());
-  };
-
-  const handlePageChange = (newPage: number) => {
-    setCurrentPage(Math.max(1, Math.min(pageCount, newPage)));
-    setIsEditingComment(false);
-    setOpenDropdownId(null);
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (openDropdownId !== null) {
-        const dropdownElement = dropdownRefs.current[openDropdownId];
-        const triggerElement = triggerRefs.current[openDropdownId];
-        
-        if (
-          dropdownElement && 
-          !dropdownElement.contains(event.target as Node) &&
-          triggerElement &&
-          !triggerElement.contains(event.target as Node)
-        ) {
-          setOpenDropdownId(null);
-        }
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [openDropdownId]);
-
-  useEffect(() => {
-    if (openDropdownId !== null) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
+  const getDotColor = (status: ParameterStatus, isSelected: boolean) => {
+    if (!isSelected) return "bg-gray-300";
+    switch (status) {
+      case "Verified":
+        return "bg-green-500";
+      case "Not Verified":
+        return "bg-red-500";
+      case "Not Sure":
+        return "bg-blue-500";
+      case "Not Used":
+        return "bg-yellow-500";
+      default:
+        return "bg-gray-300";
     }
+  };
 
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [openDropdownId]);
+  const getRealTimeValue = (paramName: string) => {
+    const key = `${uniqueKey}_${paramName}`.replace(/\s+/g, "_");
+    return realTimeValues[key] !== undefined
+      ? realTimeValues[key].toFixed(3)
+      : "N/A";
+  };
 
   return (
-    <div className="bg-white px-2 py-2 sm:px-4 md:px-6 lg:px-8 overflow-y-auto h-full">
-      <div className="border-b border-gray-200 pb-4">
-        <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-600 mb-2">
-          <div>
-            <span className="font-medium text-gray-800">Meter:</span>{" "}
-            <span className="text-[#265F95]">
-              {selectedMeter.replace("meter", "Meter ")}
-            </span>
-          </div>
-          <div>
-            <span className="font-medium text-gray-800">Location:</span>{" "}
-            <span className="text-[#265F95]">{location}</span>
-          </div>
-          <div>
-            <span className="font-medium text-gray-800">Last Updated:</span>{" "}
-            <span className="text-[#265F95]">{lastUpdated || "Not updated yet"}</span>
-          </div>
-          <div>
-            <span className="font-medium text-gray-800">Unique ID:</span>{" "}
-            <span className="text-[#265F95]">{"921"}</span>
-
-          </div>
-           <div>
-            <span className="font-medium text-gray-800">PT Ratio:</span>{" "}
-            <span className="text-[#265F95]">{"470.5"}</span>
-
-          </div>
-           <div>
-            <span className="font-medium text-gray-800">CT Ratio:</span>{" "}
-            <span className="text-[#265F95]">{"921"}</span>
-
-          </div>
-           <div>
-            <span className="font-medium text-gray-800">Modbus ID:</span>{" "}
-            <span className="text-[#265F95]">{"921"}</span>
-          </div>
-        </div>
-
-        <h1 className="text-lg font-medium text-gray-700 mt-2">
-          Parameter list for {selectedMeter.replace("meter", "Meter ")}
-        </h1>
+    <div className="bg-white px-2 sm:px-4 md:px-7 py-4 rounded-lg shadow-sm">
+      {/* Header */}
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs sm:text-sm text-gray-700 mb-4">
+        <span>
+          <span className="font-medium">Meter:</span>{" "}
+          <span className="text-[#265F95] cursor-pointer">{selectedMeter}</span>
+        </span>
+        <span>
+          <span className="font-medium">Location:</span>{" "}
+          <span className="text-[#265F95] cursor-pointer">{location}</span>
+        </span>
+        <span>
+          <span className="font-medium">Unique ID:</span>{" "}
+          <span className="text-[#265F95] cursor-pointer">{uniqueKey}</span>
+        </span>
+        <span>
+          <span className="font-medium">CT Ratio:</span>{" "}
+          <span className="text-[#265F95]">Not Available</span>
+        </span>
+        <span>
+          <span className="font-medium">PT Ratio:</span>{" "}
+          <span className="text-[#265F95]">Not Available</span>
+        </span>
+        <span>
+          <span className="font-medium">Modbus ID:</span>{" "}
+          <span className="text-[#265F95]">Not Available</span>
+        </span>
+        <span>
+          <span className="font-medium">Last Updated:</span>{" "}
+          <span className="text-[#265F95]">{lastUpdated || "N/A"}</span>
+        </span>
+        <span>
+          <span className="font-medium">Last Fetched:</span>{" "}
+          <span className="text-[#265F95]">{lastFetchedTime || "N/A"}</span>
+        </span>
       </div>
 
-      <div className="mt-1 w-full overflow-x-auto">
-        <table ref={tableRef} className="min-w-full border-collapse">
-          <thead>
-            <tr className="text-[#265F95] border-b border-gray-200">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <React.Fragment key={i}>
-                  <th className="py-3 px-2 sm:px-4 text-left font-semibold bg-gray-50">
-                    Param
-                  </th>
-                  <th className="py-3 px-2 sm:px-4 text-left font-semibold bg-gray-50">
-                    Value
-                  </th>
-                  <th className="py-3 px-2 sm:px-4 text-left font-semibold bg-gray-50">
-                    Status
-                  </th>
-                </React.Fragment>
-              ))}
+      {/* Title */}
+      <h1 className="text-base sm:text-lg font-medium text-[#7B849A] mb-2 text-left">
+        Parameter list for meter ({selectedMeter})
+      </h1>
+
+      {/* Table */}
+      <div className="w-full overflow-x-auto">
+        <table className="min-w-full sm:min-w-[500px] w-full border border-gray-200 text-center text-xs sm:text-sm">
+          <thead className="bg-gray-100">
+            <tr className="bg-[#02569738]">
+              <th className="p-2 sm:pl-[25px] sm:pr-10 border text-[#004981] whitespace-nowrap">
+                Parameter
+              </th>
+              <th className="p-2 sm:pl-[26px] sm:pr-10 border text-[#004981] whitespace-nowrap">
+                Value
+              </th>
+              <th className="p-2 border text-[#004981] whitespace-nowrap">
+                Status
+              </th>
             </tr>
           </thead>
           <tbody>
-            {groupedParameters.map((group, groupIndex) => (
-              <tr key={groupIndex} className="border-b border-gray-100 hover:bg-gray-50">
-                {group.map((param, paramIndex) => {
-                  const absoluteIndex = (currentPage - 1) * PAGE_SIZE + groupIndex * 3 + paramIndex;
-                  return (
-                    <React.Fragment key={paramIndex}>
-                      <td className="py-3 px-2 sm:px-4 text-gray-500">{param.param}</td>
-                      <td className="py-3 px-2 sm:px-4 font-medium text-gray-700">{param.value}</td>
-                      <td className="py-3 px-2 sm:px-4 relative">
-                        <div
-                          ref={(el) => (triggerRefs.current[absoluteIndex] = el)}
-                          className="dropdown-trigger flex items-center cursor-pointer w-fit"
-                          onClick={(e) => toggleDropdown(absoluteIndex, e)}
-                          data-index={absoluteIndex}
+            {pagedParameters.map((param, i) => (
+              <tr key={i} className="border-t hover:bg-gray-50">
+                <td className="p-2 sm:p-3 border whitespace-nowrap">
+                  {param.param}
+                </td>
+                <td className="p-2 border whitespace-nowrap">
+                  {getRealTimeValue(param.param)}
+                </td>
+                <td className="p-2 border">
+                  <div className="flex flex-nowrap justify-around gap-1 sm:gap-4">
+                    {statusOptions.map((option) => {
+                      const isSelected = param.status === option;
+                      return (
+                        <label
+                          key={option}
+                          className={`flex items-center gap-1 cursor-pointer ${getStatusColor(
+                            option,
+                            isSelected
+                          )}`}
                         >
-                          <span className={`mr-1 ${getStatusColor(param.status)}`}>
-                            {param.status}
-                          </span>
-                          <ChevronDown
-                            className={`w-4 h-4 text-gray-400 transition-transform ${
-                              openDropdownId === absoluteIndex ? "rotate-180" : ""
-                            }`}
+                          <span
+                            className={`w-3 h-3 rounded-full ${getDotColor(
+                              option,
+                              isSelected
+                            )}`}
+                          ></span>
+                          <input
+                            type="radio"
+                            name={`status-${i}`}
+                            checked={isSelected}
+                            onChange={() => handleStatusChange(i, option)}
+                            className="hidden"
                           />
-                        </div>
-                        {openDropdownId === absoluteIndex && (
-                          <div
-                            ref={(el) => (dropdownRefs.current[absoluteIndex] = el)}
-                            className="fixed z-50 bg-white shadow-lg rounded-md border border-gray-200 w-40 max-h-48 overflow-y-auto"
-                            style={{
-                              top: `${dropdownPosition.top}px`,
-                              left: `${dropdownPosition.left}px`
-                            }}
-                          >
-                            {statusOptions.map((option) => (
-                              <div
-                                key={option}
-                                className={`px-4 py-2 hover:bg-gray-50 cursor-pointer text-sm flex items-center ${
-                                  param.status === option ? "font-medium" : ""
-                                }`}
-                                onClick={() => handleStatusChange(absoluteIndex, option)}
-                              >
-                                <div
-                                  className={`w-4 h-4 rounded-full border mr-2 flex items-center justify-center ${
-                                    param.status === option
-                                      ? "border-blue-500 bg-blue-500"
-                                      : "border-gray-300"
-                                  }`}
-                                >
-                                  {param.status === option && (
-                                    <Check className="w-3 h-3 text-white" />
-                                  )}
-                                </div>
-                                <span
-                                  className={
-                                    param.status === option ? getStatusColor(option) : "text-gray-700"
-                                  }
-                                >
-                                  {option}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </td>
-                    </React.Fragment>
-                  );
-                })}
-                {Array(3 - group.length).fill(null).map((_, i) => (
-                  <React.Fragment key={`empty-${i}`}>
-                    <td className="py-3 px-2 sm:px-4"></td>
-                    <td className="py-3 px-2 sm:px-4"></td>
-                    <td className="py-3 px-2 sm:px-4"></td>
-                  </React.Fragment>
-                ))}
+                          <span className="text-xs sm:text-sm font-medium">
+                            {option}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
+      {/* Pagination */}
       {pageCount > 1 && (
-        <div className="flex justify-center gap-4 sm:gap-10 items-center mt-6 max-w-md mx-auto">
+        <div className="flex flex-wrap justify-center items-center gap-2 mt-4">
           <button
-            onClick={() => handlePageChange(currentPage - 1)}
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            className="px-2 border rounded text-gray-600 disabled:opacity-50"
             disabled={currentPage === 1}
-            className={`px-3 py-1 border rounded text-sm font-medium ${
-              currentPage === 1
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-white text-[#265F95] hover:bg-gray-100"
-            }`}
           >
-            Previous
+            {"<"}
           </button>
-          <span className="text-gray-700 text-sm">
-            Page <span className="font-semibold">{currentPage}</span> of{" "}
-            <span className="font-semibold">{pageCount}</span>
-          </span>
+          {Array.from({ length: pageCount }).map((_, idx) => {
+            if (
+              idx === 0 ||
+              idx === pageCount - 1 ||
+              Math.abs(currentPage - (idx + 1)) <= 1
+            ) {
+              return (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentPage(idx + 1)}
+                  className={`px-2 border rounded ${
+                    currentPage === idx + 1
+                      ? "font-bold text-black border-gray-400"
+                      : "text-gray-600 border-transparent"
+                  }`}
+                >
+                  {idx + 1}
+                </button>
+              );
+            }
+            if (
+              (idx === 1 && currentPage > 3) ||
+              (idx === pageCount - 2 && currentPage < pageCount - 2)
+            ) {
+              return (
+                <span key={idx} className="px-2 text-gray-400 select-none">
+                  ...
+                </span>
+              );
+            }
+            return null;
+          })}
           <button
-            onClick={() => handlePageChange(currentPage + 1)}
+            onClick={() => setCurrentPage((p) => Math.min(pageCount, p + 1))}
+            className="px-2 border rounded text-gray-600 disabled:opacity-50"
             disabled={currentPage === pageCount}
-            className={`px-3 py-1 border rounded text-sm font-medium ${
-              currentPage === pageCount
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-white text-[#265F95] hover:bg-gray-100"
-            }`}
           >
-            Next
+            {">"}
           </button>
         </div>
       )}
 
+      {/* Comment */}
       <div className="mt-8 pt-6 border-t border-gray-200">
         <div className="w-full">
-          <div className="flex justify-between items-center mb-2">
+          <div className="flex flex-wrap justify-between items-center mb-2 gap-2">
             <h3 className="text-base font-medium text-gray-600">
               Add comment (for this Meter)
             </h3>
             {isEditingComment ? (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setIsEditingComment(false)}
-                  className="text-[#265F95] hover:text-blue-700 flex items-center gap-1 text-sm font-medium"
-                >
-                  <Edit className="w-4 h-4" />
-                  Edit
-                </button>
-                <button
-                  onClick={handleCommentSave}
-                  className="text-[#265F95] hover:text-blue-700 flex items-center gap-1 text-sm font-medium"
-                >
-                  <Save className="w-4 h-4" />
-                  Save
-                </button>
-              </div>
-            ) : savedComment ? (
               <button
                 onClick={() => {
-                  setComment(savedComment);
+                  setComments((prev) => ({
+                    ...prev,
+                    [currentPage]: comment,
+                  }));
+                  setIsEditingComment(false);
+                }}
+                className="text-[#265F95] hover:text-blue-700 flex items-center gap-1 text-sm font-medium"
+              >
+                <Save className="w-4 h-4" />
+                Save
+              </button>
+            ) : comments[currentPage] ? (
+              <button
+                onClick={() => {
+                  setComment(comments[currentPage]);
                   setIsEditingComment(true);
                 }}
                 className="text-[#265F95] hover:text-blue-700 flex items-center gap-1 text-sm font-medium"
@@ -351,9 +345,9 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({ selectedMeter, 
               placeholder="Type your comment here..."
               autoFocus
             />
-          ) : savedComment ? (
+          ) : comments[currentPage] ? (
             <div className="border border-transparent px-3 py-2 rounded min-h-[6rem] whitespace-pre-wrap bg-gray-50">
-              {savedComment}
+              {comments[currentPage]}
             </div>
           ) : (
             <button

@@ -104,4 +104,39 @@ export const parameters = [
         value: 55,
         status: "Not Verified",
     },
+    {
+        id: "param16",
+        param: "Parameter 16",
+        unit: "kWh",
+        value: 400.00,
+        status: "Not Verified",
+    },
+    {
+        id: "param17",
+        param: "Parameter 17",
+        unit: "kW",
+        value: 225.50,
+        status: "Not Verified",
+    },
+    {
+        id: "param18",
+        param: "Parameter 18",
+        unit: "V",
+        value: 450,
+        status: "Not Verified",
+    },
+    {
+        id: "param19",
+        param: "Parameter 19",
+        unit: "A",
+        value: 25.0,
+        status: "Not Verified",
+    },
+    {
+        id: "param20",
+        param: "Parameter 20",
+        unit: "Hz",
+        value: 65,
+        status: "Not Verified",
+    }
 ];

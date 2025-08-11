@@ -7,11 +7,12 @@ import { RiArrowDropDownLine } from "react-icons/ri";
 import { Listbox } from "@headlessui/react";
 import SearchBar from "./components/Search";
 import { parameters } from "./components/data";
-import { fetchMeters } from "./components/actions/fetchmeters"; // Adjust the import path as necessary
+
 interface Meter {
-  id: string; 
-  name: string; 
+  id: string;
+  name: string;
   location: string;
+  unique_key: string; // ✅ Add unique_key to Meter interface
 }
 
 const Page = () => {
@@ -19,13 +20,11 @@ const Page = () => {
   const [meters, setMeters] = useState<Meter[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
-  // Async function to fetch data
   const fetchMeters = async () => {
     setLoading(true);
     try {
       const res = await fetch("http://localhost:3000/api/meters/", {
-        
-        method: 'GET'
+        method: "GET",
       });
 
       const data = await res.json();
@@ -33,12 +32,12 @@ const Page = () => {
       if (res.ok) {
         console.log("Fetched meters:", data);
 
-        // Map API data to our Meter type
         setMeters(
           data.map((m: any) => ({
             id: m.meter_name,
-            name: m.meter_name,   
-            location: m.location, 
+            name: m.meter_name,
+            location: m.location,
+            unique_key: m.unique_key, // ✅ Map API unique_key
           }))
         );
       }
@@ -52,9 +51,6 @@ const Page = () => {
   useEffect(() => {
     fetchMeters();
   }, []);
-  // const meter = fetchMeters();
-
-  // console.log(meter);
 
   return (
     <>
@@ -129,7 +125,12 @@ const Page = () => {
               {selectedMeter === "" ? (
                 <DataVerificationPanel />
               ) : (
-                <MeterParameterList selectedMeter={selectedMeter} data={parameters} location={meters.find(m => m.id === selectedMeter)?.location || ""} />
+                <MeterParameterList
+                  selectedMeter={selectedMeter}
+                  data={parameters}
+                  location={meters.find((m) => m.id === selectedMeter)?.location || ""}
+                  uniqueKey={meters.find((m) => m.id === selectedMeter)?.unique_key || ""} // ✅ Pass unique_key
+                />
               )}
             </div>
           </div>

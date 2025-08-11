@@ -1,5 +1,6 @@
 import { connectDB } from "@/lib/mongodb";
 import Meter from "@/models/Meter";
+import MeterName from "@/models/MeterName";
 
 export async function POST() {
   try {
@@ -19,30 +20,35 @@ export async function POST() {
       const parts = key.split("_");
       if (parts.length < 3) continue;
 
-      const meterName = `${parts[0]}_${parts[1]}`;
+      const uniqueKey = `${parts[0]}_${parts[1]}`;
       const paramName = parts.slice(2).join("_");
 
-      if (!meterMap[meterName]) {
-        meterMap[meterName] = new Set();
+      if (!meterMap[uniqueKey]) {
+        meterMap[uniqueKey] = new Set();
       }
-      meterMap[meterName].add(paramName);
+      meterMap[uniqueKey].add(paramName);
     }
 
     let insertedCount = 0;
 
-    for (const [meterName, paramsSet] of Object.entries(meterMap)) {
-      const parameters = Array.from(paramsSet).map((p) => ({
-        paramName: p,
-      }));
+    for (const [uniqueKey, paramsSet] of Object.entries(meterMap)) {
+      const parameters = Array.from(paramsSet).map((p) => ({ paramName: p }));
 
-      const exists = await Meter.findOne({ name: meterName });
+      const exists = await Meter.findOne({ unique_key: uniqueKey });
       if (!exists) {
+        const meterNameDoc = await MeterName.findOne(
+          { unique_key: uniqueKey },
+          { meter_name: 1, location: 1 }
+        );
+
         await Meter.create({
-          name: meterName,
-          location: "Not Available",
+          unique_key: uniqueKey,
+          name: meterNameDoc?.meter_name || uniqueKey,
+          location: meterNameDoc?.location || "Not Available",
           parameters,
-          comments: [],
+          comment: "",
         });
+
         insertedCount++;
       }
     }
