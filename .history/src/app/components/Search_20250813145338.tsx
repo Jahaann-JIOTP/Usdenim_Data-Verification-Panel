@@ -7,9 +7,6 @@ interface SearchBarProps {
   setStatusFilter: (status: string) => void;
 }
 
-type ParameterStatus = "Verified" | "Not Verified" | "Not Sure" | "Not Used";
-type StatusFilter = ParameterStatus | "";
-
 export default function SearchBar({ setSearchQuery, setStatusFilter }: SearchBarProps) {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
@@ -17,7 +14,8 @@ export default function SearchBar({ setSearchQuery, setStatusFilter }: SearchBar
   const filterButtonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const [status, setStatus] = useState<StatusFilter>("");
+  type ParameterStatus = "Verified" | "Not Verified" | "Not Sure" | "Not Used";
+  const [status, setStatus] = useState<ParameterStatus | "">("");
 
   const statusOptions: ParameterStatus[] = [
     "Verified",
@@ -37,7 +35,7 @@ export default function SearchBar({ setSearchQuery, setStatusFilter }: SearchBar
     setIsFilterOpen(!isFilterOpen);
   };
 
-  const handleOptionClick = (newStatus: StatusFilter) => {
+  const handleOptionClick = (newStatus: ParameterStatus) => {
     setStatus(newStatus);
     setStatusFilter(newStatus);
     setIsFilterOpen(false);

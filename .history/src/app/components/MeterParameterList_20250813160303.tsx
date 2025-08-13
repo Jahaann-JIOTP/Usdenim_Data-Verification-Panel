@@ -295,7 +295,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
       </div>
       {/* Table */}
       <div className="w-full overflow-x-auto">
-        <table className="min-w-full sm:min-w-[500px] w-full border border-gray-200 text-center text-xs sm:text-sm">
+        <table className="min-w-full sm:min-w-[1000px] w-full border border-gray-200 text-center text-xs sm:text-sm">
           <thead className="bg-gray-100">
             <tr className="bg-[#02569738]">
               <th className="p-2 text-[#004981] border whitespace-nowrap">

@@ -1,6 +1,6 @@
 import { connectDB } from "@/lib/mongodb";
 import Meter from "@/models/Meter";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   try {
@@ -11,10 +11,10 @@ export async function GET(req: NextRequest) {
     const uniqueKey = searchParams.get("unique_key");
 
     if (!statusParam || !uniqueKey) {
-      return new Response(
-        JSON.stringify({
+      return NextResponse.json(
+        {
           error: "Both status and unique_key query parameters are required",
-        }),
+        },
         { status: 400 }
       );
     }
@@ -36,15 +36,15 @@ export async function GET(req: NextRequest) {
     );
 
     if (!meter) {
-      return new Response(
-        JSON.stringify({
-          error: "Meter not found or no parameters matching status",
-        }),
-        { status: 404 }
+      return NextResponse.json(
+        {
+          error: `No Parameters Found with Status ${statuses.join(", ")}`,
+        },
+        { status: 400 }
       );
     }
 
-    const filteredParams = meter.parameters.filter((p) =>
+    const filteredParams = meter.parameters.filter((p: { status: string }) =>
       statuses.includes(p.status)
     );
 
@@ -56,14 +56,9 @@ export async function GET(req: NextRequest) {
       parameters: filteredParams,
     };
 
-    return new Response(JSON.stringify({ success: true, meter: result }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    return NextResponse.json({ success: true, meter: result }, { status: 200 });
   } catch (error) {
     console.error("Error filtering meter parameters:", error);
-    return new Response(JSON.stringify({ error: "Server error" }), {
-      status: 500,
-    });
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

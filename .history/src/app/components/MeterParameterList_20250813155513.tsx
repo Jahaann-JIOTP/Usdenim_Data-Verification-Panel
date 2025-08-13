@@ -39,7 +39,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
   const [parameters, setParameters] = useState<Parameter[]>(data);
   const [lastUpdated, setLastUpdated] = useState<string>("");
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [comments, setComments] = useState<Record<string, string>>({});
+  const [comments, setComments] = useState<Record<string, string>>({}); // key changed to string (uniqueKey)
   const [comment, setComment] = useState<string>("");
   const [isEditingComment, setIsEditingComment] = useState<boolean>(false);
   const [realTimeValues, setRealTimeValues] = useState<Record<string, number>>({});
@@ -57,15 +57,16 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
   }) => {
     try {
       const response = await fetch(
-        `http://localhost:3000/api/meters/${uniqueKey}/update-status`,
+        `http://localhost:3001/api/meters/${uniqueKey}/update-status`,
         {
           method: "PATCH",
           headers: {
-            "Compressed-Type": "application/json",
+            "Content-Type": "application/json",
           },
           body: JSON.stringify(updates),
         }
       );
+
       if (!response.ok) throw new Error("Failed to update meter data");
       return await response.json();
     } catch (error) {
@@ -97,12 +98,14 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
 
   const fetchParameters = async () => {
     if (!uniqueKey) return;
+
     setIsLoading(true);
     try {
-      let url = `http://localhost:3000/api/meters/${uniqueKey}`;
+      let url = `http://localhost:3001/api/meters/${uniqueKey}`;
       if (statusFilter && statusFilter !== "") {
-        url = `http://localhost:3000/api/meters/filter?unique_key=${uniqueKey}&status=${encodeURIComponent(statusFilter)}`;
+        url = `http://localhost:3001/api/meters/filter?unique_key=${uniqueKey}&status=${encodeURIComponent(statusFilter)}`;
       }
+
       const res = await fetch(url);
       if (res.ok) {
         const apiData = await res.json();
@@ -128,12 +131,16 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
 
   useEffect(() => {
     fetchParameters();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uniqueKey, statusFilter]);
 
   // Filter parameters based on search query and status filter
   const filteredParameters = parameters.filter((param) => {
-    const matchesSearch = param.param.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = !statusFilter || param.status === statusFilter;
+    const matchesSearch =
+      !searchQuery ||
+      param.param.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus =
+      !statusFilter || param.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -160,18 +167,24 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
   const handleStatusChange = async (index: number, newStatus: ParameterStatus) => {
     const paramToUpdate = pagedParameters[index];
     const originalIndex = parameters.findIndex(p => p.param === paramToUpdate.param);
+
     if (originalIndex !== -1) {
       try {
         setUpdatingStatus(prev => ({...prev, [paramToUpdate.param]: true}));
+        
+        // Optimistic UI update
         const newParameters = [...parameters];
         newParameters[originalIndex].status = newStatus;
         setParameters(newParameters);
         setLastUpdated(getCurrentTime());
+        
+        // Update in backend
         await updateMeterData({
           paramName: paramToUpdate.param,
           newStatus: newStatus
         });
       } catch (error) {
+        // Revert if update fails
         const originalParameters = [...parameters];
         setParameters(originalParameters);
         console.error("Failed to update status:", error);
@@ -186,7 +199,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
       await updateMeterData({ comment });
       setComments((prev) => ({
         ...prev,
-        [uniqueKey]: comment,
+        [uniqueKey]: comment, // store comment by uniqueKey
       }));
       setMeterComment(comment);
       setIsEditingComment(false);
@@ -272,6 +285,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
           <span className="text-[#265F95]">{lastFetchedTime || "N/A"}</span>
         </span>
       </div>
+
       {/* Title with Results Count */}
       <div className="flex flex-wrap justify-between items-center mb-2 gap-2">
         <h1 className="text-base sm:text-lg font-medium text-[#7B849A] text-left">
@@ -293,6 +307,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
           </div>
         )}
       </div>
+
       {/* Table */}
       <div className="w-full overflow-x-auto">
         <table className="min-w-full sm:min-w-[500px] w-full border border-gray-200 text-center text-xs sm:text-sm">
@@ -398,6 +413,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
           </tbody>
         </table>
       </div>
+
       {/* Pagination */}
       {!isLoading && pageCount > 1 && (
         <div className="flex flex-wrap justify-center items-center gap-2 mt-4">
@@ -451,6 +467,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
           </button>
         </div>
       )}
+
       {/* Comment */}
       {!isLoading && (
         <div className="mt-8 pt-6 border-t border-gray-200">
@@ -480,6 +497,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
                 </button>
               ) : null}
             </div>
+
             {isEditingComment ? (
               <textarea
                 value={comment}

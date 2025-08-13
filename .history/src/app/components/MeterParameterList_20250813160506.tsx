@@ -61,7 +61,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
         {
           method: "PATCH",
           headers: {
-            "Compressed-Type": "application/json",
+            "Content-Type": "application/json", // Fixed header typo
           },
           body: JSON.stringify(updates),
         }
@@ -295,7 +295,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
       </div>
       {/* Table */}
       <div className="w-full overflow-x-auto">
-        <table className="min-w-full sm:min-w-[500px] w-full border border-gray-200 text-center text-xs sm:text-sm">
+        <table className="min-w-full w-full border border-gray-200 text-center text-xs sm:text-sm">
           <thead className="bg-gray-100">
             <tr className="bg-[#02569738]">
               <th className="p-2 text-[#004981] border whitespace-nowrap">
@@ -359,7 +359,39 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
                     {getRealTimeValue(param.param)}
                   </td>
                   <td className="p-2 border">
-                    <div className="flex flex-nowrap justify-around gap-1 sm:gap-4">
+                    {/* Responsive Status Selector */}
+                    <div className="block sm:hidden">
+                      <select
+                        value={param.status}
+                        onChange={(e) => handleStatusChange(i, e.target.value as ParameterStatus)}
+                        disabled={updatingStatus[param.param]}
+                        className={`w-full border rounded px-2 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-[#265F95] ${
+                          param.status === "Verified" ? "text-green-600" :
+                          param.status === "Not Verified" ? "text-red-600" :
+                          param.status === "Not Sure" ? "text-blue-600" :
+                          param.status === "Not Used" ? "text-yellow-600" :
+                          "text-gray-500"
+                        }`}
+                      >
+                        {statusOptions.map((option) => (
+                          <option
+                            key={option}
+                            value={option}
+                            className={`font-medium ${
+                              option === "Verified" ? "text-green-600" :
+                              option === "Not Verified" ? "text-red-600" :
+                              option === "Not Sure" ? "text-blue-600" :
+                              option === "Not Used" ? "text-yellow-600" :
+                              "text-gray-500"
+                            }`}
+                          >
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {/* Radio Buttons for Larger Screens */}
+                    <div className="hidden sm:flex flex-nowrap justify-around gap-1 sm:gap-4">
                       {statusOptions.map((option) => {
                         const isSelected = param.status === option;
                         return (

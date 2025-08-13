@@ -6,20 +6,21 @@ import MeterParameterList from "./components/MeterParameterList";
 import { RiArrowDropDownLine } from "react-icons/ri";
 import { Listbox } from "@headlessui/react";
 import SearchBar from "./components/Search";
+import { parameters } from "./components/data";
 
 interface Meter {
   id: string;
   name: string;
   location: string;
-  unique_key: string;
+  unique_key: string; // ✅ Add unique_key to Meter interface
 }
 
 const Page = () => {
   const [selectedMeter, setSelectedMeter] = useState<string>("");
   const [meters, setMeters] = useState<Meter[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   const fetchMeters = async () => {
     setLoading(true);
@@ -27,15 +28,18 @@ const Page = () => {
       const res = await fetch("http://localhost:3000/api/meters/", {
         method: "GET",
       });
+
       const data = await res.json();
+
       if (res.ok) {
         console.log("Fetched meters:", data);
+
         setMeters(
           data.map((m: any) => ({
             id: m.meter_name,
             name: m.meter_name,
             location: m.location,
-            unique_key: m.unique_key,
+            unique_key: m.unique_key, // ✅ Map API unique_key
           }))
         );
       }
@@ -53,6 +57,7 @@ const Page = () => {
   return (
     <>
       <Navbar />
+
       <main className="flex items-start justify-center pt-2 sm:pt-4">
         <div className="relative w-[98%] sm:w-[97%] h-[90vh] sm:h-[87vh]">
           <div className="absolute top-[3px] left-0 right-0 bottom-0 bg-white shadow-md border-t-3 border-[#265F95] z-10 overflow-hidden flex flex-col rounded-md">
@@ -66,6 +71,7 @@ const Page = () => {
                   of individual data parameters.
                 </p>
               </div>
+
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                   <label
@@ -74,6 +80,8 @@ const Page = () => {
                   >
                     Select Meter:
                   </label>
+
+                  {/* Dropdown */}
                   <div className="relative w-full sm:w-48">
                     {loading ? (
                       <p className="text-xs text-gray-500">loading...</p>
@@ -81,26 +89,18 @@ const Page = () => {
                       <Listbox value={selectedMeter} onChange={setSelectedMeter}>
                         <div className="relative">
                           <Listbox.Button className="appearance-none border border-gray-300 rounded-[10px] px-3 sm:px-4 py-2 text-xs sm:text-sm bg-white text-black w-full flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <span className="truncate">
-                              {meters.find((m) => m.id === selectedMeter)?.name || "-- Select --"}
-                            </span>
-                            <RiArrowDropDownLine className="ml-2 text-xl flex-shrink-0" />
+                            {meters.find((m) => m.id === selectedMeter)?.name || "-- Select --"}
+                            <RiArrowDropDownLine className="ml-2 text-xl" />
                           </Listbox.Button>
                           <Listbox.Options className="absolute mt-1 max-h-48 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/10 focus:outline-none z-20">
                             {meters.map((meter) => (
-                              <Listbox.Option
-                                key={meter.id}
-                                value={meter.id}
-                                className={({ active }) =>
-                                  `cursor-pointer select-none relative py-2 pl-4 pr-4 truncate ${
-                                    active
-                                      ? "bg-blue-100 text-blue-900"
-                                      : "text-gray-900"
-                                  }`
-                                }
+                              <div
+                                key={meter.unique_key}
+                                onClick={() => setSelectedMeter(meter.unique_key)}
+                                className="cursor-pointer select-none relative py-2 pl-4 pr-4 text-gray-900"
                               >
                                 {meter.name}
-                              </Listbox.Option>
+                              </div>
                             ))}
                           </Listbox.Options>
                         </div>
@@ -108,22 +108,27 @@ const Page = () => {
                     )}
                   </div>
                 </div>
+
                 {selectedMeter && (
                   <div className="w-full sm:w-48">
-                    <SearchBar setSearchQuery={setSearchQuery} setStatusFilter={setStatusFilter} />
+                    <SearchBar
+                      onSearchChange={setSearchQuery}
+                      onStatusFilter={setStatusFilter}
+                    />
                   </div>
                 )}
               </div>
             </div>
+
             <div className="flex-1 overflow-auto">
               {selectedMeter === "" ? (
                 <DataVerificationPanel />
               ) : (
                 <MeterParameterList
                   selectedMeter={selectedMeter}
-                  data={[]}
+                  data={parameters}
                   location={meters.find((m) => m.id === selectedMeter)?.location || ""}
-                  uniqueKey={meters.find((m) => m.id === selectedMeter)?.unique_key || ""}
+                  uniqueKey={meters.find((m) => m.id === selectedMeter)?.unique_key || ""} // ✅ Pass unique_key
                   searchQuery={searchQuery}
                   statusFilter={statusFilter}
                 />

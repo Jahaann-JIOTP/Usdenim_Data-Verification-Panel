@@ -52,7 +52,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
   // Unified API call function
   const updateMeterData = async (updates: {
     paramName?: string;
-    newStatus?: ParameterStatus;
+    newStatus: ParameterStatus;
     comment?: string;
   }) => {
     try {

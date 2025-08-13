@@ -1,6 +1,7 @@
 import { connectDB } from "@/lib/mongodb";
 import Meter from "@/models/Meter";
 import MeterName from "@/models/MeterName";
+import { NextResponse } from "next/server";
 
 export async function POST() {
   try {
@@ -8,10 +9,13 @@ export async function POST() {
 
     const response = await fetch("http://13.234.241.103:1880/surajcotton");
     if (!response.ok) {
-      throw new Error(`Failed to fetch: ${response.status}`);
+      return NextResponse.json(
+        { error: `Failed to fetch: ${response.status}` },
+        { status: response.status }
+      );
     }
-    const liveData = await response.json();
 
+    const liveData = await response.json();
     const meterMap: Record<string, Set<string>> = {};
 
     for (const key of Object.keys(liveData)) {
@@ -53,14 +57,15 @@ export async function POST() {
       }
     }
 
-    return new Response(
-      JSON.stringify({ message: `Inserted ${insertedCount} new meters` }),
+    return NextResponse.json(
+      { message: `Inserted ${insertedCount} new meters` },
       { status: 201 }
     );
   } catch (error) {
     console.error("Error importing meters:", error);
-    return new Response(JSON.stringify({ error: "Failed to import meters" }), {
-      status: 500,
-    });
+    return NextResponse.json(
+      { error: "Failed to import meters" },
+      { status: 500 }
+    );
   }
 }

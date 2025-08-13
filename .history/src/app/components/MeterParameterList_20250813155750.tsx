@@ -359,38 +359,29 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
                     {getRealTimeValue(param.param)}
                   </td>
                   <td className="p-2 border">
-                    <div className="flex flex-nowrap justify-around gap-1 sm:gap-4">
-                      {statusOptions.map((option) => {
-                        const isSelected = param.status === option;
-                        return (
-                          <label
-                            key={option}
-                            className={`flex items-center gap-1 cursor-pointer ${getStatusColor(
-                              option,
-                              isSelected
-                            )}`}
-                          >
-                            <span
-                              className={`w-3 h-3 rounded-full ${getDotColor(
-                                option,
-                                isSelected
-                              )}`}
-                            ></span>
-                            <input
-                              type="radio"
-                              name={`status-${param.param}-${i}`}
-                              checked={isSelected}
-                              onChange={() => handleStatusChange(i, option)}
-                              className="hidden"
-                              disabled={updatingStatus[param.param]}
-                            />
-                            <span className="text-xs sm:text-sm font-medium">
-                              {option}
-                            </span>
-                          </label>
-                        );
-                      })}
-                    </div>
+                    <div className="flex gap-4 overflow-x-auto py-1 min-w-max">
+  {statusOptions.map((option) => {
+    const isSelected = param.status === option;
+    return (
+      <label
+        key={option}
+        className={`flex items-center gap-1 cursor-pointer ${getStatusColor(option, isSelected)}`}
+      >
+        <span className={`w-3 h-3 rounded-full ${getDotColor(option, isSelected)}`}></span>
+        <input
+          type="radio"
+          name={`status-${param.param}-${i}`}
+          checked={isSelected}
+          onChange={() => handleStatusChange(i, option)}
+          className="hidden"
+          disabled={updatingStatus[param.param]}
+        />
+        <span className="text-xs sm:text-sm font-medium">{option}</span>
+      </label>
+    );
+  })}
+</div>
+
                   </td>
                 </tr>
               ))

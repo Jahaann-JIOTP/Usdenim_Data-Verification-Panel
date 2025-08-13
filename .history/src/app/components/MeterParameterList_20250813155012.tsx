@@ -43,7 +43,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
   const [comment, setComment] = useState<string>("");
   const [isEditingComment, setIsEditingComment] = useState<boolean>(false);
   const [realTimeValues, setRealTimeValues] = useState<Record<string, number>>({});
-  const [lastFetchedTime, setLastFetchedTime] = useState<string>("");
+  const [lastFetchedTime, setLastUpdatedTime] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRealTimeLoading, setIsRealTimeLoading] = useState<boolean>(true);
   const [updatingStatus, setUpdatingStatus] = useState<Record<string, boolean>>({});
@@ -61,7 +61,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
         {
           method: "PATCH",
           headers: {
-            "Compressed-Type": "application/json",
+            "Content-Type": "application/json",
           },
           body: JSON.stringify(updates),
         }
@@ -81,7 +81,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
       if (!response.ok) throw new Error("Failed to fetch real-time data");
       const data = await response.json();
       setRealTimeValues(data);
-      setLastFetchedTime(new Date().toLocaleTimeString());
+      setLastUpdatedTime(new Date().toLocaleTimeString());
     } catch (error) {
       console.error("Error fetching real-time data:", error);
     } finally {
@@ -236,9 +236,9 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
   };
 
   return (
-    <div className="bg-white px-2 sm:px-4 md:px-7 py-4 rounded-lg shadow-sm">
+    <div className="bg-white px-2 sm:px-4 md:px-6 lg:px-8 py-4 rounded-lg shadow-sm max-w-full">
       {/* Header */}
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs sm:text-sm text-gray-700 mb-4">
+      <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs sm:text-sm text-gray-700 mb-4">
         <span>
           <span className="font-medium">Meter:</span>{" "}
           <span className="text-[#265F95] cursor-pointer">{selectedMeter}</span>
@@ -269,17 +269,17 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
         </span>
         <span>
           <span className="font-medium">Last Fetched:</span>{" "}
-          <span className="text-[#265F95]">{lastFetchedTime || "N/A"}</span>
+          <span className="text-[#265F95]">{lastUpdatedTime || "N/A"}</span>
         </span>
       </div>
       {/* Title with Results Count */}
-      <div className="flex flex-wrap justify-between items-center mb-2 gap-2">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
         <h1 className="text-base sm:text-lg font-medium text-[#7B849A] text-left">
           Parameter list for meter ({selectedMeter})
         </h1>
         {(searchQuery || statusFilter) && (
-          <div className="text-sm text-gray-600">
-            Showing {filteredParameters.length} of {parameters.length} parameters
+          <div className="text-xs sm:text-sm text-gray-600 flex flex-wrap gap-2">
+            <span>Showing {filteredParameters.length} of {parameters.length} parameters</span>
             {searchQuery && (
               <span className="ml-2">
                 • Search: "<span className="font-medium text-blue-600">{searchQuery}</span>"
@@ -295,28 +295,28 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
       </div>
       {/* Table */}
       <div className="w-full overflow-x-auto">
-        <table className="min-w-full sm:min-w-[500px] w-full border border-gray-200 text-center text-xs sm:text-sm">
+        <table className="min-w-full w-full border border-gray-200 text-center text-xs sm:text-sm">
           <thead className="bg-gray-100">
             <tr className="bg-[#02569738]">
-              <th className="p-2 text-[#004981] border whitespace-nowrap">
+              <th className="p-2 sm:p-3 text-[#004981] border whitespace-nowrap w-[10%]">
                 Serial No.
               </th>
-              <th className="p-2 sm:pl-[25px] sm:pr-10 border text-[#004981] whitespace-nowrap">
+              <th className="p-2 sm:p-3 border text-[#004981] whitespace-nowrap w-[30%]">
                 Parameter
               </th>
-              <th className="p-2 sm:pl-[26px] sm:pr-10 border text-[#004981] whitespace-nowrap">
+              <th className="p-2 sm:p-3 border text-[#004981] whitespace-nowrap w-[20%]">
                 Value
               </th>
-              <th className="p-2 border text-[#004981] whitespace-nowrap">
+              <th className="p-2 sm:p-3 border text-[#004981] whitespace-nowrap w-[40%]">
                 Status
               </th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
-              <tr className="height-[200px]">
+              <tr className="h-[200px]">
                 <td colSpan={4} className="p-8">
-                  <div className="flex justify-center items-center h-[50vh]">
+                  <div className="flex justify-center items-center h-[50vh] sm:h-[30vh]">
                     <RotatingLines
                       strokeColor="#265F95"
                       strokeWidth="5"
@@ -329,7 +329,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
               </tr>
             ) : filteredParameters.length === 0 ? (
               <tr>
-                <td colSpan={4} className="p-8 text-center text-gray-500">
+                <td colSpan={4} className="p-8 text-center text-gray-500 text-xs sm:text-sm">
                   {searchQuery || statusFilter
                     ? "No parameters found matching your search criteria."
                     : "No parameters available."}
@@ -338,10 +338,10 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
             ) : (
               pagedParameters.map((param, i) => (
                 <tr key={`${param.param}-${i}`} className="border-t hover:bg-gray-50">
-                  <td className="p-2 border whitespace-nowrap">
+                  <td className="p-2 sm:p-3 border whitespace-nowrap">
                     {(currentPage - 1) * PAGE_SIZE + i + 1}
                   </td>
-                  <td className="p-2 sm:p-3 border whitespace-nowrap text-center">
+                  <td className="p-2 sm:p-3 border text-center truncate">
                     {searchQuery ? (
                       <span
                         dangerouslySetInnerHTML={{
@@ -355,17 +355,17 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
                       param.param
                     )}
                   </td>
-                  <td className="p-2 border whitespace-nowrap">
+                  <td className="p-2 sm:p-3 border whitespace-nowrap">
                     {getRealTimeValue(param.param)}
                   </td>
-                  <td className="p-2 border">
-                    <div className="flex flex-nowrap justify-around gap-1 sm:gap-4">
+                  <td className="p-2 sm:p-3 border">
+                    <div className="flex flex-wrap justify-center gap-2 sm:gap-4">
                       {statusOptions.map((option) => {
                         const isSelected = param.status === option;
                         return (
                           <label
                             key={option}
-                            className={`flex items-center gap-1 cursor-pointer ${getStatusColor(
+                            className={`flex items-center gap-1 cursor-pointer whitespace-nowrap text-xs sm:text-sm ${getStatusColor(
                               option,
                               isSelected
                             )}`}
@@ -384,9 +384,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
                               className="hidden"
                               disabled={updatingStatus[param.param]}
                             />
-                            <span className="text-xs sm:text-sm font-medium">
-                              {option}
-                            </span>
+                            <span className="font-medium">{option}</span>
                           </label>
                         );
                       })}
@@ -403,7 +401,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
         <div className="flex flex-wrap justify-center items-center gap-2 mt-4">
           <button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            className="px-3 py-1 border rounded shadow-sm bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition disabled:opacity-50 disabled:shadow-none"
+            className="px-2 py-1 sm:px-3 sm:py-1 border rounded shadow-sm bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition disabled:opacity-50 disabled:shadow-none text-xs sm:text-sm"
             disabled={currentPage === 1}
           >
             {"<"}
@@ -418,13 +416,12 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
                 <button
                   key={idx}
                   onClick={() => setCurrentPage(idx + 1)}
-                  className={`px-3 py-1 border rounded shadow-sm bg-white transition
+                  className={`px-2 py-1 sm:px-3 sm:py-1 border rounded shadow-sm bg-white transition text-xs sm:text-sm
                     ${
                       currentPage === idx + 1
                         ? "font-bold text-black bg-blue-100 border-[#004981] shadow"
                         : "text-gray-600 hover:bg-blue-100 hover:text-blue-700"
-                    }
-                    `}
+                    }`}
                 >
                   {idx + 1}
                 </button>
@@ -435,7 +432,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
               (idx === pageCount - 2 && currentPage < pageCount - 2)
             ) {
               return (
-                <span key={idx} className="px-2 text-gray-400 select-none">
+                <span key={idx} className="px-2 text-gray-400 select-none text-xs sm:text-sm">
                   ...
                 </span>
               );
@@ -444,7 +441,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
           })}
           <button
             onClick={() => setCurrentPage((p) => Math.min(pageCount, p + 1))}
-            className="px-3 py-1 border rounded shadow-sm bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition disabled:opacity-50 disabled:shadow-none"
+            className="px-2 py-1 sm:px-3 sm:py-1 border rounded shadow-sm bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition disabled:opacity-50 disabled:shadow-none text-xs sm:text-sm"
             disabled={currentPage === pageCount}
           >
             {">"}
@@ -453,16 +450,16 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
       )}
       {/* Comment */}
       {!isLoading && (
-        <div className="mt-8 pt-6 border-t border-gray-200">
+        <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-200">
           <div className="w-full">
-            <div className="flex flex-wrap justify-between items-center mb-2 gap-2">
-              <h3 className="text-base font-medium text-gray-600">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 gap-2">
+              <h3 className="text-base sm:text-lg font-medium text-gray-600">
                 Add comment (for this Meter)
               </h3>
               {isEditingComment ? (
                 <button
                   onClick={handleSaveComment}
-                  className="text-[#265F95] hover:text-blue-700 flex items-center gap-1 text-sm font-medium"
+                  className="text-[#265F95] hover:text-blue-700 flex items-center gap-1 text-xs sm:text-sm font-medium"
                 >
                   <Save className="w-4 h-4" />
                   Save
@@ -473,7 +470,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
                     setComment(meterComment || comments[uniqueKey] || "");
                     setIsEditingComment(true);
                   }}
-                  className="text-[#265F95] hover:text-blue-700 flex items-center gap-1 text-sm font-medium"
+                  className="text-[#265F95] hover:text-blue-700 flex items-center gap-1 text-xs sm:text-sm font-medium"
                 >
                   <Edit className="w-4 h-4" />
                   Edit
@@ -484,12 +481,12 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
               <textarea
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                className="w-full border border-gray-300 rounded px-3 py-2 text-black focus:outline-none focus:ring-1 focus:ring-[#265F95] min-h-[6rem] resize-y"
+                className="w-full border border-gray-300 rounded px-3 py-2 text-xs sm:text-sm text-black focus:outline-none focus:ring-1 focus:ring-[#265F95] min-h-[6rem] resize-y"
                 placeholder="Type your comment here..."
                 autoFocus
               />
             ) : meterComment || comments[uniqueKey] ? (
-              <div className="border border-transparent px-3 py-2 rounded min-h-[6rem] whitespace-pre-wrap bg-gray-50">
+              <div className="border border-transparent px-3 py-2 rounded min-h-[6rem] whitespace-pre-wrap bg-gray-50 text-xs sm:text-sm">
                 {meterComment || comments[uniqueKey]}
               </div>
             ) : (
@@ -498,7 +495,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
                   setComment("");
                   setIsEditingComment(true);
                 }}
-                className="text-[#265F95] hover:text-blue-700 text-sm font-medium hover:underline"
+                className="text-[#265F95] hover:text-blue-700 text-xs sm:text-sm font-medium hover:underline"
               >
                 + Add comment
               </button>

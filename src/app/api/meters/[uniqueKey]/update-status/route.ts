@@ -1,42 +1,37 @@
 import { connectDB } from "@/lib/mongodb";
 import Meter from "@/models/Meter";
-import MeterName from "@/models/MeterName";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { meterName: string } }
-): Promise<Response> {
+  { params }: { params: Promise<{ uniqueKey: string }> }
+): Promise<NextResponse> {
   try {
+    const resolvedParams = await params;
     await connectDB();
 
-    const { meterName } = params;
-    const body = await req.json();
-    const { paramName, newStatus, comment } = body;
-
-    if (!paramName && typeof comment !== "string") {
-      return new Response(
-        JSON.stringify({ error: "paramName or comment must be provided" }),
+    const uniqueKey = resolvedParams.uniqueKey?.trim();
+    if (!uniqueKey) {
+      return NextResponse.json(
+        { error: "Unique key not provided" },
         { status: 400 }
       );
     }
 
-    const meterInfo = await MeterName.findOne(
-      { unique_key: meterName.trim() },
-      { _id: 0, unique_key: 1 }
-    );
+    const body = await req.json();
+    const { paramName, newStatus, comment } = body;
 
-    if (!meterInfo) {
-      return new Response(
-        JSON.stringify({ error: "Meter not found in meter_name collection" }),
-        { status: 404 }
+    if (!paramName && typeof comment !== "string") {
+      return NextResponse.json(
+        { error: "paramName or comment must be provided" },
+        { status: 400 }
       );
     }
 
-    const meter = await Meter.findOne({ unique_key: meterInfo.unique_key });
+    const meter = await Meter.findOne({ unique_key: uniqueKey });
     if (!meter) {
-      return new Response(
-        JSON.stringify({ error: "Meter not found in meters collection" }),
+      return NextResponse.json(
+        { error: "Meter not found in meters collection" },
         { status: 404 }
       );
     }
@@ -50,8 +45,8 @@ export async function PATCH(
       );
 
       if (!param) {
-        return new Response(
-          JSON.stringify({ error: `Parameter ${paramName} not found` }),
+        return NextResponse.json(
+          { error: `Parameter ${paramName} not found` },
           { status: 404 }
         );
       }
@@ -70,28 +65,23 @@ export async function PATCH(
     }
 
     if (!statusUpdated && !commentUpdated) {
-      return new Response(
-        JSON.stringify({ success: false, message: "Nothing to update" }),
+      return NextResponse.json(
+        { success: false, message: "Nothing to update" },
         { status: 200 }
       );
     }
 
     await meter.save();
 
-    // Build response object dynamically
     const responsePayload: any = { success: true };
-    if (statusUpdated)
-      responsePayload.updatedStatus = paramName ? newStatus : null;
+    if (statusUpdated) responsePayload.updatedStatus = newStatus;
     if (commentUpdated) responsePayload.updatedComment = meter.comment;
 
-    return new Response(JSON.stringify(responsePayload), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    return NextResponse.json(responsePayload, { status: 200 });
   } catch (error) {
     console.error("Error updating parameter status and comment:", error);
-    return new Response(
-      JSON.stringify({ error: "Failed to update parameter status or comment" }),
+    return NextResponse.json(
+      { error: "Failed to update parameter status or comment" },
       { status: 500 }
     );
   }

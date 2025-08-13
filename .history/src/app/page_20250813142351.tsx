@@ -81,10 +81,8 @@ const Page = () => {
                       <Listbox value={selectedMeter} onChange={setSelectedMeter}>
                         <div className="relative">
                           <Listbox.Button className="appearance-none border border-gray-300 rounded-[10px] px-3 sm:px-4 py-2 text-xs sm:text-sm bg-white text-black w-full flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <span className="truncate">
-                              {meters.find((m) => m.id === selectedMeter)?.name || "-- Select --"}
-                            </span>
-                            <RiArrowDropDownLine className="ml-2 text-xl flex-shrink-0" />
+                            {meters.find((m) => m.id === selectedMeter)?.name || "-- Select --"}
+                            <RiArrowDropDownLine className="ml-2 text-xl" />
                           </Listbox.Button>
                           <Listbox.Options className="absolute mt-1 max-h-48 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/10 focus:outline-none z-20">
                             {meters.map((meter) => (
@@ -92,7 +90,7 @@ const Page = () => {
                                 key={meter.id}
                                 value={meter.id}
                                 className={({ active }) =>
-                                  `cursor-pointer select-none relative py-2 pl-4 pr-4 truncate ${
+                                  `cursor-pointer select-none relative py-2 pl-4 pr-4 ${
                                     active
                                       ? "bg-blue-100 text-blue-900"
                                       : "text-gray-900"

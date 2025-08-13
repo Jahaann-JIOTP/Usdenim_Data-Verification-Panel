@@ -359,7 +359,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
                     {getRealTimeValue(param.param)}
                   </td>
                   <td className="p-2 border">
-                    <div className="flex flex-nowrap justify-around gap-1 sm:gap-4">
+                    <div className="flex flex-col justify-around gap-1 sm:gap-4">
                       {statusOptions.map((option) => {
                         const isSelected = param.status === option;
                         return (
