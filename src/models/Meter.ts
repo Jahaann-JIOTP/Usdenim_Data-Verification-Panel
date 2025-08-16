@@ -13,10 +13,12 @@ const ParameterSchema = new mongoose.Schema(
 );
 
 const MeterSchema = new mongoose.Schema({
+  unique_key: { type: String, required: true },
   name: String,
   location: String,
   parameters: [ParameterSchema],
-  comments: [String],
+  comment: { type: String, default: "" },
 });
 
-export default mongoose.models.Meter || mongoose.model("Meter", MeterSchema);
+export default mongoose.models.Meter ||
+  mongoose.model("Meter", MeterSchema, "meters");

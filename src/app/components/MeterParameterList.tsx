@@ -42,11 +42,15 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
   const [comments, setComments] = useState<Record<string, string>>({});
   const [comment, setComment] = useState<string>("");
   const [isEditingComment, setIsEditingComment] = useState<boolean>(false);
-  const [realTimeValues, setRealTimeValues] = useState<Record<string, number>>({});
+  const [realTimeValues, setRealTimeValues] = useState<Record<string, number>>(
+    {}
+  );
   const [lastFetchedTime, setLastFetchedTime] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRealTimeLoading, setIsRealTimeLoading] = useState<boolean>(true);
-  const [updatingStatus, setUpdatingStatus] = useState<Record<string, boolean>>({});
+  const [updatingStatus, setUpdatingStatus] = useState<Record<string, boolean>>(
+    {}
+  );
   const [meterComment, setMeterComment] = useState<string>("");
 
   // Unified API call function
@@ -61,7 +65,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
         {
           method: "PATCH",
           headers: {
-            "Compressed-Type": "application/json",
+            "Content-Type": "application/json",
           },
           body: JSON.stringify(updates),
         }
@@ -101,7 +105,9 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
     try {
       let url = `http://localhost:3000/api/meters/${uniqueKey}`;
       if (statusFilter && statusFilter !== "") {
-        url = `http://localhost:3000/api/meters/filter?unique_key=${uniqueKey}&status=${encodeURIComponent(statusFilter)}`;
+        url = `http://localhost:3000/api/meters/filter?unique_key=${uniqueKey}&status=${encodeURIComponent(
+          statusFilter
+        )}`;
       }
       const res = await fetch(url);
       if (res.ok) {
@@ -132,7 +138,9 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
 
   // Filter parameters based on search query and status filter
   const filteredParameters = parameters.filter((param) => {
-    const matchesSearch = param.param.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = param.param
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
     const matchesStatus = !statusFilter || param.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -157,26 +165,29 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
   const getCurrentTime = () =>
     new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-  const handleStatusChange = async (index: number, newStatus: ParameterStatus) => {
-    const paramToUpdate = pagedParameters[index];
-    const originalIndex = parameters.findIndex(p => p.param === paramToUpdate.param);
+  const handleStatusChange = async (
+    paramName: string,
+    newStatus: ParameterStatus
+  ) => {
+    const originalIndex = parameters.findIndex((p) => p.param === paramName);
     if (originalIndex !== -1) {
       try {
-        setUpdatingStatus(prev => ({...prev, [paramToUpdate.param]: true}));
+        setUpdatingStatus((prev) => ({ ...prev, [paramName]: true }));
         const newParameters = [...parameters];
         newParameters[originalIndex].status = newStatus;
         setParameters(newParameters);
         setLastUpdated(getCurrentTime());
         await updateMeterData({
-          paramName: paramToUpdate.param,
-          newStatus: newStatus
+          paramName,
+          newStatus,
         });
       } catch (error) {
-        const originalParameters = [...parameters];
-        setParameters(originalParameters);
         console.error("Failed to update status:", error);
       } finally {
-        setUpdatingStatus(prev => ({...prev, [paramToUpdate.param]: false}));
+        setUpdatingStatus((prev) => ({
+          ...prev,
+          [paramName]: false,
+        }));
       }
     }
   };
@@ -203,7 +214,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
       case "Not Verified":
         return "text-red-600";
       case "Not Sure":
-        return "text-blue-600";
+        return "text-[#1A68B2]";
       case "Not Used":
         return "text-yellow-600";
       default:
@@ -219,7 +230,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
       case "Not Verified":
         return "bg-red-500";
       case "Not Sure":
-        return "bg-blue-500";
+        return "bg-[#1A68B2]";
       case "Not Used":
         return "bg-yellow-500";
       default:
@@ -279,15 +290,21 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
         </h1>
         {(searchQuery || statusFilter) && (
           <div className="text-sm text-gray-600">
-            Showing {filteredParameters.length} of {parameters.length} parameters
+            Showing {filteredParameters.length} of {parameters.length}{" "}
+            parameters
             {searchQuery && (
               <span className="ml-2">
-                • Search: "<span className="font-medium text-blue-600">{searchQuery}</span>"
+                • Search: "
+                <span className="font-medium text-blue-600">{searchQuery}</span>
+                "
               </span>
             )}
             {statusFilter && (
               <span className="ml-2">
-                • Status: <span className="font-medium text-blue-600">{statusFilter}</span>
+                • Status:{" "}
+                <span className="font-medium text-blue-600">
+                  {statusFilter}
+                </span>
               </span>
             )}
           </div>
@@ -337,7 +354,10 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
               </tr>
             ) : (
               pagedParameters.map((param, i) => (
-                <tr key={`${param.param}-${i}`} className="border-t hover:bg-gray-50">
+                <tr
+                  key={`${uniqueKey}-${param.param}`}
+                  className="border-t hover:bg-gray-50"
+                >
                   <td className="p-2 border whitespace-nowrap">
                     {(currentPage - 1) * PAGE_SIZE + i + 1}
                   </td>
@@ -346,9 +366,9 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
                       <span
                         dangerouslySetInnerHTML={{
                           __html: param.param.replace(
-                            new RegExp(`(${searchQuery})`, 'gi'),
+                            new RegExp(`(${searchQuery})`, "gi"),
                             '<mark class="bg-yellow-200 font-medium">$1</mark>'
-                          )
+                          ),
                         }}
                       />
                     ) : (
@@ -359,7 +379,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
                     {getRealTimeValue(param.param)}
                   </td>
                   <td className="p-2 border">
-                    <div className="flex flex-nowrap justify-around gap-1 sm:gap-4">
+                    <div className="flex flex-col md:flex-row justify-around gap-4 md:gap-1">
                       {statusOptions.map((option) => {
                         const isSelected = param.status === option;
                         return (
@@ -378,9 +398,11 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
                             ></span>
                             <input
                               type="radio"
-                              name={`status-${param.param}-${i}`}
+                              name={`status-${uniqueKey}-${param.param}`}
                               checked={isSelected}
-                              onChange={() => handleStatusChange(i, option)}
+                              onChange={() =>
+                                handleStatusChange(param.param, option)
+                              }
                               className="hidden"
                               disabled={updatingStatus[param.param]}
                             />

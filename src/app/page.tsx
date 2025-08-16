@@ -78,11 +78,15 @@ const Page = () => {
                     {loading ? (
                       <p className="text-xs text-gray-500">loading...</p>
                     ) : (
-                      <Listbox value={selectedMeter} onChange={setSelectedMeter}>
+                      <Listbox
+                        value={selectedMeter}
+                        onChange={setSelectedMeter}
+                      >
                         <div className="relative">
-                          <Listbox.Button className="appearance-none border border-gray-300 rounded-[10px] px-3 sm:px-4 py-2 text-xs sm:text-sm bg-white text-black w-full flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-blue-500">
+                          <Listbox.Button className="appearance-none border border-gray-300 rounded-[10px] px-3 sm:px-4 py-2 text-xs sm:text-sm bg-white text-black w-full flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-[#1A68B2]">
                             <span className="truncate">
-                              {meters.find((m) => m.id === selectedMeter)?.name || "-- Select --"}
+                              {meters.find((m) => m.id === selectedMeter)
+                                ?.name || "-- Select --"}
                             </span>
                             <RiArrowDropDownLine className="ml-2 text-xl flex-shrink-0" />
                           </Listbox.Button>
@@ -110,7 +114,10 @@ const Page = () => {
                 </div>
                 {selectedMeter && (
                   <div className="w-full sm:w-48">
-                    <SearchBar setSearchQuery={setSearchQuery} setStatusFilter={setStatusFilter} />
+                    <SearchBar
+                      setSearchQuery={setSearchQuery}
+                      setStatusFilter={setStatusFilter}
+                    />
                   </div>
                 )}
               </div>
@@ -122,8 +129,12 @@ const Page = () => {
                 <MeterParameterList
                   selectedMeter={selectedMeter}
                   data={[]}
-                  location={meters.find((m) => m.id === selectedMeter)?.location || ""}
-                  uniqueKey={meters.find((m) => m.id === selectedMeter)?.unique_key || ""}
+                  location={
+                    meters.find((m) => m.id === selectedMeter)?.location || ""
+                  }
+                  uniqueKey={
+                    meters.find((m) => m.id === selectedMeter)?.unique_key || ""
+                  }
                   searchQuery={searchQuery}
                   statusFilter={statusFilter}
                 />

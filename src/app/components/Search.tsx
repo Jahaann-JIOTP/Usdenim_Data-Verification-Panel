@@ -103,7 +103,7 @@ export default function SearchBar({ setSearchQuery, setStatusFilter }: SearchBar
         onClick={toggleFilterDropdown}
         className="flex items-center justify-center border border-gray-300 rounded-md p-2 hover:bg-gray-100"
       >
-        <SlidersHorizontal className="w-4 h-4 text-blue-600" />
+        <SlidersHorizontal className="w-4 h-4 text-[#1A68B2]" />
       </button>
       {/* Filter Dropdown */}
       {isFilterOpen && (
