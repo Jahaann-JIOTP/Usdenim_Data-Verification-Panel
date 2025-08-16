@@ -139,6 +139,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
     fetchParameters();
   }, [uniqueKey, statusFilter]);
 
+  // Filter parameters based on search query and status filter
   const filteredParameters = parameters.filter((param) => {
     const matchesSearch = param.param
       .toLowerCase()
@@ -147,6 +148,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
     return matchesSearch && matchesStatus;
   });
 
+  // Removed reset page useEffect; handled in parent
 
   useEffect(() => {
     setComment(comments[uniqueKey] || "");

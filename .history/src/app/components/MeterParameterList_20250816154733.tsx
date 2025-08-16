@@ -17,8 +17,8 @@ interface MeterParameterListProps {
   uniqueKey: string;
   searchQuery: string;
   statusFilter: string;
-  currentPage: number; 
-  setCurrentPage: (page: number) => void; 
+  currentPage: number; // NEW: Prop from parent
+  setCurrentPage: (page: number) => void; // NEW: Setter from parent
 }
 
 const statusOptions: ParameterStatus[] = [
@@ -56,7 +56,9 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
   );
   const [meterComment, setMeterComment] = useState<string>("");
 
-  
+  // Removed local currentPage state and reset useEffect; handled in parent
+
+  // Unified API call function
   const updateMeterData = async (updates: {
     paramName?: string;
     newStatus?: ParameterStatus;
@@ -139,6 +141,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
     fetchParameters();
   }, [uniqueKey, statusFilter]);
 
+  // Filter parameters based on search query and status filter
   const filteredParameters = parameters.filter((param) => {
     const matchesSearch = param.param
       .toLowerCase()
@@ -147,6 +150,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
     return matchesSearch && matchesStatus;
   });
 
+  // Removed reset page useEffect; handled in parent
 
   useEffect(() => {
     setComment(comments[uniqueKey] || "");
@@ -437,7 +441,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
                 <button
                   key={idx}
                   onClick={() => setCurrentPage(idx + 1)}
-                  className={`px-3 py-1 border rounded shadow-sm bg-white transition cursor-pointer 
+                  className={`px-3 py-1 border rounded shadow-sm bg-white transition
                     ${
                       currentPage === idx + 1
                         ? "font-bold text-black bg-blue-100 border-[#004981] shadow"
@@ -463,7 +467,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
           })}
           <button
             onClick={() => setCurrentPage(Math.min(pageCount, currentPage + 1))}
-            className="px-3 py-1 border rounded shadow-sm bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition disabled:opacity-50 disabled:shadow-none cursor-pointer"
+            className="px-3 py-1 border rounded shadow-sm bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition disabled:opacity-50 disabled:shadow-none"
             disabled={currentPage === pageCount}
           >
             {">"}

@@ -55,7 +55,6 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
     {}
   );
   const [meterComment, setMeterComment] = useState<string>("");
-
   
   const updateMeterData = async (updates: {
     paramName?: string;
@@ -139,6 +138,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
     fetchParameters();
   }, [uniqueKey, statusFilter]);
 
+  // Filter parameters based on search query and status filter
   const filteredParameters = parameters.filter((param) => {
     const matchesSearch = param.param
       .toLowerCase()
@@ -147,6 +147,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
     return matchesSearch && matchesStatus;
   });
 
+  // Removed reset page useEffect; handled in parent
 
   useEffect(() => {
     setComment(comments[uniqueKey] || "");
@@ -332,7 +333,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
                 <td colSpan={4} className="p-8">
                   <div className="flex justify-center items-center h-[50vh]">
                     <RotatingLines
-                      strokeColor="#265F95"
+                      strokeColor="#004981"
                       strokeWidth="5"
                       animationDuration="0.75"
                       width="50"

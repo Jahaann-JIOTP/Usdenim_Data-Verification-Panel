@@ -55,8 +55,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
     {}
   );
   const [meterComment, setMeterComment] = useState<string>("");
-
-  
+  c
   const updateMeterData = async (updates: {
     paramName?: string;
     newStatus?: ParameterStatus;
@@ -332,7 +331,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
                 <td colSpan={4} className="p-8">
                   <div className="flex justify-center items-center h-[50vh]">
                     <RotatingLines
-                      strokeColor="#265F95"
+                      strokeColor="#004981"
                       strokeWidth="5"
                       animationDuration="0.75"
                       width="50"

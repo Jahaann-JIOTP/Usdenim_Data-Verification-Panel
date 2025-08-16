@@ -200,13 +200,9 @@ const PageContent = () => {
                                   <input
                                     type="text"
                                     value={dropdownSearch}
-                                    onChange={(e) => setDropdownSearch(e.target.value)}
-                                    onKeyDown={(e) => {
-                                      if (e.key === " ") {
-                                        e.preventDefault();
-                                        setDropdownSearch((prev) => prev + " ");
-                                      }
-                                    }}
+                                    onChange={(e) =>
+                                      setDropdownSearch(e.target.value)
+                                    }
                                     placeholder="Search meters..."
                                     className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-[8px] bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#265F95] focus:border-transparent placeholder-gray-400 transition-all duration-200"
                                     autoFocus
@@ -243,9 +239,9 @@ const PageContent = () => {
                                             <span className="text-blue-600 ml-2">✓</span>
                                           )}
                                         </div>
-                                        <div className="text-xs text-gray-500 truncate mt-0.5">
+                                        {/* <div className="text-xs text-gray-500 truncate mt-0.5">
                                           {meter.location}
-                                        </div>
+                                        </div> */}
                                       </Listbox.Option>
                                     ))
                                   )}

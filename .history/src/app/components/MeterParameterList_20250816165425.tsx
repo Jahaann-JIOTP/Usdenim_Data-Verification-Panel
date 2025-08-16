@@ -147,6 +147,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
     return matchesSearch && matchesStatus;
   });
 
+  // Removed reset page useEffect; handled in parent
 
   useEffect(() => {
     setComment(comments[uniqueKey] || "");
