@@ -15,8 +15,10 @@ interface MeterParameterListProps {
   data: Parameter[];
   location: string;
   uniqueKey: string;
-  searchQuery?: string;
-  statusFilter?: string;
+  searchQuery: string;
+  statusFilter: string;
+  currentPage: number; // NEW: Prop from parent
+  setCurrentPage: (page: number) => void; // NEW: Setter from parent
 }
 
 const statusOptions: ParameterStatus[] = [
@@ -33,12 +35,13 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
   data,
   location,
   uniqueKey,
-  searchQuery = "",
-  statusFilter = "",
+  searchQuery,
+  statusFilter,
+  currentPage,
+  setCurrentPage,
 }) => {
   const [parameters, setParameters] = useState<Parameter[]>(data);
   const [lastUpdated, setLastUpdated] = useState<string>("");
-  const [currentPage, setCurrentPage] = useState<number>(1);
   const [comments, setComments] = useState<Record<string, string>>({});
   const [comment, setComment] = useState<string>("");
   const [isEditingComment, setIsEditingComment] = useState<boolean>(false);
@@ -52,6 +55,8 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
     {}
   );
   const [meterComment, setMeterComment] = useState<string>("");
+
+  // Removed local currentPage state and reset useEffect; handled in parent
 
   // Unified API call function
   const updateMeterData = async (updates: {
@@ -145,12 +150,8 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
     return matchesSearch && matchesStatus;
   });
 
-  // Reset to first page when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, statusFilter]);
+  // Removed reset page useEffect; handled in parent
 
-  // Update comment state when uniqueKey changes
   useEffect(() => {
     setComment(comments[uniqueKey] || "");
     setIsEditingComment(false);
@@ -424,7 +425,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
       {!isLoading && pageCount > 1 && (
         <div className="flex flex-wrap justify-center items-center gap-2 mt-4">
           <button
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
             className="px-3 py-1 border rounded shadow-sm bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition disabled:opacity-50 disabled:shadow-none"
             disabled={currentPage === 1}
           >
@@ -465,7 +466,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
             return null;
           })}
           <button
-            onClick={() => setCurrentPage((p) => Math.min(pageCount, p + 1))}
+            onClick={() => setCurrentPage(Math.min(pageCount, currentPage + 1))}
             className="px-3 py-1 border rounded shadow-sm bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition disabled:opacity-50 disabled:shadow-none"
             disabled={currentPage === pageCount}
           >

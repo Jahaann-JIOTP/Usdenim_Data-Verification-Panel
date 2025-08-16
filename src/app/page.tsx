@@ -6,6 +6,8 @@ import MeterParameterList from "./components/MeterParameterList";
 import { RiArrowDropDownLine } from "react-icons/ri";
 import { Listbox } from "@headlessui/react";
 import SearchBar from "./components/Search";
+import { useRouter, useSearchParams } from "next/navigation";
+import { RotatingLines } from "react-loader-spinner";
 
 interface Meter {
   id: string;
@@ -18,8 +20,13 @@ const Page = () => {
   const [selectedMeter, setSelectedMeter] = useState<string>("");
   const [meters, setMeters] = useState<Meter[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [isPageLoading, setIsPageLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   const fetchMeters = async () => {
     setLoading(true);
@@ -29,26 +36,109 @@ const Page = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        console.log("Fetched meters:", data);
-        setMeters(
-          data.map((m: any) => ({
-            id: m.meter_name,
+        console.log("Fetched meters (raw API response):", data);
+
+        // Check for duplicate meter_name and unique_key values
+        const meterNames = data.map((m: any) => m.meter_name);
+        const uniqueKeys = data.map((m: any) => m.unique_key);
+        const duplicateMeterNames = meterNames.filter(
+          (name: string, index: number) => meterNames.indexOf(name) !== index
+        );
+        const duplicateUniqueKeys = uniqueKeys.filter(
+          (key: string, index: number) => uniqueKeys.indexOf(key) !== index
+        );
+        if (duplicateMeterNames.length > 0) {
+          console.warn("Duplicate meter names detected:", duplicateMeterNames);
+        }
+        if (duplicateUniqueKeys.length > 0) {
+          console.error("Duplicate unique_keys detected:", duplicateUniqueKeys);
+        }
+
+        // Deduplicate by unique_key, keeping the last occurrence
+        const uniqueMeters = new Map();
+        data.forEach((m: any) => {
+          uniqueMeters.set(m.unique_key, {
+            id: m.unique_key,
             name: m.meter_name,
             location: m.location,
             unique_key: m.unique_key,
-          }))
-        );
+          });
+        });
+        const deduplicatedMeters: Meter[] = Array.from(uniqueMeters.values());
+        console.log("Deduplicated meters:", deduplicatedMeters);
+        setMeters(deduplicatedMeters);
+      } else {
+        console.error("API request failed, status:", res.status);
+        setMeters([]);
       }
     } catch (err) {
       console.error("Error fetching meters:", err);
+      setMeters([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchMeters();
+    const init = async () => {
+      setIsPageLoading(true);
+      await fetchMeters();
+      setIsPageLoading(false);
+    };
+    init();
   }, []);
+
+  // Set all states from URL after meters are fetched
+  useEffect(() => {
+    if (!loading && meters.length > 0) {
+      const meterFromUrl = searchParams.get("meter") || "";
+      const searchFromUrl = searchParams.get("search") || "";
+      const statusFromUrl = searchParams.get("status") || "";
+      const pageFromUrl = parseInt(searchParams.get("page") || "1", 10);
+
+      if (meterFromUrl && meters.some((m) => m.id === meterFromUrl)) {
+        setSelectedMeter(meterFromUrl);
+        setSearchQuery(searchFromUrl);
+        setStatusFilter(statusFromUrl);
+        setCurrentPage(isNaN(pageFromUrl) ? 1 : pageFromUrl);
+      } else {
+        setSelectedMeter("");
+        setSearchQuery("");
+        setStatusFilter("");
+        setCurrentPage(1);
+        router.push("/");
+      }
+    }
+  }, [loading, meters, searchParams, router]);
+
+  // Function to update URL with current params
+  const updateUrl = () => {
+    const params = new URLSearchParams();
+    if (selectedMeter) params.set("meter", selectedMeter);
+    if (searchQuery) params.set("search", searchQuery);
+    if (statusFilter) params.set("status", statusFilter);
+    params.set("page", currentPage.toString());
+    router.push(`/?${params.toString()}`);
+  };
+
+  // Update URL when any state changes
+  useEffect(() => {
+    if (selectedMeter) updateUrl();
+  }, [selectedMeter, searchQuery, statusFilter, currentPage]);
+
+  // Reset page to 1 when search or status changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
+
+  const handleMeterChange = (value: string) => {
+    setSelectedMeter(value);
+    setSearchQuery(""); // Reset on meter change
+    setStatusFilter("");
+    setCurrentPage(1);
+  };
+
+  const showLoader = isPageLoading || (searchParams.has("meter") && selectedMeter === "" && !loading);
 
   return (
     <>
@@ -80,7 +170,7 @@ const Page = () => {
                     ) : (
                       <Listbox
                         value={selectedMeter}
-                        onChange={setSelectedMeter}
+                        onChange={handleMeterChange}
                       >
                         <div className="relative">
                           <Listbox.Button className="appearance-none border border-gray-300 rounded-[10px] px-3 sm:px-4 py-2 text-xs sm:text-sm bg-white text-black w-full flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-[#1A68B2]">
@@ -91,7 +181,7 @@ const Page = () => {
                             <RiArrowDropDownLine className="ml-2 text-xl flex-shrink-0" />
                           </Listbox.Button>
                           <Listbox.Options className="absolute mt-1 max-h-48 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/10 focus:outline-none z-20">
-                            {meters.map((meter) => (
+                            {meters.map((meter, index) => (
                               <Listbox.Option
                                 key={meter.id}
                                 value={meter.id}
@@ -123,7 +213,17 @@ const Page = () => {
               </div>
             </div>
             <div className="flex-1 overflow-auto">
-              {selectedMeter === "" ? (
+              {showLoader ? (
+                <div className="flex justify-center items-center h-full">
+                  <RotatingLines
+                    strokeColor="#265F95"
+                    strokeWidth="5"
+                    animationDuration="0.75"
+                    width="50"
+                    visible={true}
+                  />
+                </div>
+              ) : selectedMeter === "" ? (
                 <DataVerificationPanel />
               ) : (
                 <MeterParameterList
@@ -137,6 +237,8 @@ const Page = () => {
                   }
                   searchQuery={searchQuery}
                   statusFilter={statusFilter}
+                  currentPage={currentPage}
+                  setCurrentPage={setCurrentPage}
                 />
               )}
             </div>
