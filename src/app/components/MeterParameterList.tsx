@@ -429,7 +429,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
         <div className="flex flex-wrap justify-center items-center gap-2 mt-4">
           <button
             onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-            className="px-3 py-1 border rounded shadow-sm bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition disabled:opacity-50 disabled:shadow-none"
+            className="px-3 py-1 border rounded shadow-sm bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition disabled:opacity-50 disabled:shadow-none cursor-pointer"
             disabled={currentPage === 1}
           >
             {"<"}

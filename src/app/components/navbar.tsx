@@ -22,12 +22,12 @@ export default function Navbar() {
       </div>
 
       {/* Right Logo */}
-      <div className="w-12 h-12">
+      <div className="w-28 h-12 cursor-pointer">
         <Image
-          src="/assets/Navy_logo.png" 
+          src="/assets/suraj-cotton-logo.png" 
           alt="Mascot"
-          width={48}
-          height={48}
+          width={110}
+          height={60}
           className="object-contain"
         />
       </div>
