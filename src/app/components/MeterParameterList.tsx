@@ -64,7 +64,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
   }) => {
     try {
       const response = await fetch(
-        `http://localhost:3000/api/meters/${uniqueKey}/update-status`,
+        `/api/meters/${uniqueKey}/update-status`,
         {
           method: "PATCH",
           headers: {
@@ -84,7 +84,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
   const fetchRealTimeValues = async () => {
     setIsRealTimeLoading(true);
     try {
-      const response = await fetch("http://13.234.241.103:1880/surajcotton");
+      const response = await fetch("/api/surajcotton-real-time-link");
       if (!response.ok) throw new Error("Failed to fetch real-time data");
       const data = await response.json();
       setRealTimeValues(data);
@@ -98,7 +98,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
 
   useEffect(() => {
     fetchRealTimeValues();
-    const interval = setInterval(fetchRealTimeValues, 10000);
+    const interval = setInterval(fetchRealTimeValues, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -106,9 +106,9 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
     if (!uniqueKey) return;
     setIsLoading(true);
     try {
-      let url = `http://localhost:3000/api/meters/${uniqueKey}`;
+      let url = `/api/meters/${uniqueKey}`;
       if (statusFilter && statusFilter !== "") {
-        url = `http://localhost:3000/api/meters/filter?unique_key=${uniqueKey}&status=${encodeURIComponent(
+        url = `/api/meters/filter?unique_key=${uniqueKey}&status=${encodeURIComponent(
           statusFilter
         )}`;
       }
@@ -139,6 +139,8 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
     fetchParameters();
   }, [uniqueKey, statusFilter]);
 
+  
+
   const filteredParameters = parameters.filter((param) => {
     const matchesSearch = param.param
       .toLowerCase()
@@ -146,6 +148,11 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
     const matchesStatus = !statusFilter || param.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  useEffect(() => {
+  console.log("All Parameters:", parameters);
+  console.log("Filtered parameters :", filteredParameters);
+}, [parameters, filteredParameters]);
 
 
   useEffect(() => {
@@ -481,7 +488,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
               {isEditingComment ? (
                 <button
                   onClick={handleSaveComment}
-                  className="text-[#265F95] hover:text-blue-700 flex items-center gap-1 text-sm font-medium"
+                  className="text-[#265F95] hover:text-blue-700 flex items-center gap-1 text-sm font-medium cursor-pointer"
                 >
                   <Save className="w-4 h-4" />
                   Save
@@ -492,7 +499,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
                     setComment(meterComment || comments[uniqueKey] || "");
                     setIsEditingComment(true);
                   }}
-                  className="text-[#265F95] hover:text-blue-700 flex items-center gap-1 text-sm font-medium"
+                  className="text-[#265F95] hover:text-blue-700 flex items-center gap-1 text-sm font-medium cursor-pointer"
                 >
                   <Edit className="w-4 h-4" />
                   Edit

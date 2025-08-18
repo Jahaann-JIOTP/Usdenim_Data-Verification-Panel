@@ -33,7 +33,7 @@ const PageContent = () => {
   const fetchMeters = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3000/api/meters/", {
+      const res = await fetch("api/meters/", {
         method: "GET",
       });
       const data = await res.json();
