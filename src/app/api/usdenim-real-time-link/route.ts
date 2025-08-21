@@ -1,6 +1,6 @@
 export async function GET() {
   try {
-    const response = await fetch("http://13.234.241.103:1880/surajcotton");
+    const response = await fetch("http://13.234.241.103:1880/usdenim");
 
     if (!response.ok) {
       return new Response(

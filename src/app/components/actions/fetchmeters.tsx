@@ -6,11 +6,7 @@ export const fetchMeters = async () => {
 
       const data = await res.json();
 
-      if (res.ok) {
-        console.log("Fetched meters:", data);
-
-        // Map API data to our Meter typ
-      }
+     
     } catch (err) {
       console.error("Error fetching meters:", err);
     } finally {

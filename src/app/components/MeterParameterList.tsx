@@ -17,7 +17,8 @@ interface MeterParameterListProps {
   uniqueKey: string;
   searchQuery: string;
   statusFilter: string;
-  currentPage: number; 
+  currentPage: number;
+  meterName:string; 
   setCurrentPage: (page: number) => void; 
 }
 
@@ -38,6 +39,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
   searchQuery,
   statusFilter,
   currentPage,
+  meterName,
   setCurrentPage,
 }) => {
   const [parameters, setParameters] = useState<Parameter[]>(data);
@@ -84,7 +86,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
   const fetchRealTimeValues = async () => {
     setIsRealTimeLoading(true);
     try {
-      const response = await fetch("/api/surajcotton-real-time-link");
+      const response = await fetch("/api/usdenim-real-time-link");
       if (!response.ok) throw new Error("Failed to fetch real-time data");
       const data = await response.json();
       setRealTimeValues(data);
@@ -149,11 +151,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
     return matchesSearch && matchesStatus;
   });
 
-  useEffect(() => {
-  console.log("All Parameters:", parameters);
-  console.log("Filtered parameters :", filteredParameters);
-}, [parameters, filteredParameters]);
-
+  
 
   useEffect(() => {
     setComment(comments[uniqueKey] || "");
@@ -243,7 +241,6 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
   };
 
   const getRealTimeValue = (paramName: string) => {
-    if (isRealTimeLoading) return "Loading...";
     const key = `${uniqueKey}_${paramName}`.replace(/\s+/g, "_");
     return realTimeValues[key] !== undefined
       ? realTimeValues[key].toFixed(2)
@@ -251,13 +248,13 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
   };
 
   return (
-    <div className="bg-white px-2 sm:px-4 md:px-7 py-4 rounded-lg shadow-sm">
+    <div className="bg-white px-2 sm:px-4 md:px-7 py-4">
       {/* Header */}
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs sm:text-sm text-gray-700 mb-4">
-        <span>
+        {/* <span>
           <span className="font-medium">Meter:</span>{" "}
           <span className="text-[#265F95] cursor-pointer">{selectedMeter}</span>
-        </span>
+        </span> */}
         <span>
           <span className="font-medium">Location:</span>{" "}
           <span className="text-[#265F95] cursor-pointer">{location}</span>
@@ -266,7 +263,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
           <span className="font-medium">Unique ID:</span>{" "}
           <span className="text-[#265F95] cursor-pointer">{uniqueKey}</span>
         </span>
-        <span>
+        {/* <span>
           <span className="font-medium">CT Ratio:</span>{" "}
           <span className="text-[#265F95]">Not Available</span>
         </span>
@@ -277,7 +274,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
         <span>
           <span className="font-medium">Modbus ID:</span>{" "}
           <span className="text-[#265F95]">Not Available</span>
-        </span>
+        </span> */}
         <span>
           <span className="font-medium">Last Updated:</span>{" "}
           <span className="text-[#265F95]">{lastUpdated || "N/A"}</span>
@@ -290,7 +287,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
       {/* Title with Results Count */}
       <div className="flex flex-wrap justify-between items-center mb-2 gap-2">
         <h1 className="text-base sm:text-lg font-medium text-[#7B849A] text-left">
-          Parameter list for meter ({selectedMeter})
+          Parameter list for meter ({meterName})
         </h1>
         {(searchQuery || statusFilter) && (
           <div className="text-sm text-gray-600">

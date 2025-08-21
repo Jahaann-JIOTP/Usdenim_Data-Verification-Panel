@@ -38,7 +38,7 @@ const PageContent = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        console.log("Fetched meters", data);
+      
 
         const meterNames = data.map((m: any) => m.meter_name);
         const uniqueKeys = data.map((m: any) => m.unique_key);
@@ -166,7 +166,7 @@ const PageContent = () => {
                   </label>
                   <div className="relative w-full sm:w-48">
                     {loading ? (
-                      <p className="text-xs text-gray-500">loading...</p>
+                      <div className="text-xs text-gray-500 border border-gray-300 rounded-[10px] px-3 sm:px-4 py-2">loading...</div>
                     ) : (
                       <Listbox
                         value={selectedMeter}
@@ -269,7 +269,10 @@ const PageContent = () => {
               </div>
             </div>
             <div className="flex-1 overflow-auto">
-              {showLoader ? (
+              {
+                selectedMeter ===""?(
+                   <DataVerificationPanel />
+                ):showLoader ? (
                 <div className="flex justify-center items-center h-full">
                   <RotatingLines
                     strokeColor="#004981"
@@ -279,8 +282,6 @@ const PageContent = () => {
                     visible={true}
                   />
                 </div>
-              ) : selectedMeter === "" ? (
-                <DataVerificationPanel />
               ) : (
                 <MeterParameterList
                   selectedMeter={selectedMeter}
@@ -291,12 +292,16 @@ const PageContent = () => {
                   uniqueKey={
                     meters.find((m) => m.id === selectedMeter)?.unique_key || ""
                   }
+                  meterName={
+                    meters.find((m) => m.id === selectedMeter)?.name || ""
+                  }
                   searchQuery={searchQuery}
                   statusFilter={statusFilter}
                   currentPage={currentPage}
                   setCurrentPage={setCurrentPage}
                 />
-              )}
+              )
+              }
             </div>
           </div>
         </div>
