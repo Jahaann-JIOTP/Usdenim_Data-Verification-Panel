@@ -12,13 +12,19 @@ const ParameterSchema = new mongoose.Schema(
   { _id: false }
 );
 
-const MeterSchema = new mongoose.Schema({
-  unique_key: { type: String, required: true },
-  name: String,
-  location: String,
-  parameters: [ParameterSchema],
-  comment: { type: String, default: "" },
-});
+const MeterSchema = new mongoose.Schema(
+  {
+    unique_key: { type: String, required: true },
+    name: String,
+    location: String,
+    parameters: [ParameterSchema],
+    comment: { type: String, default: "" },
+
+    commentUpdatedAt: { type: Date },
+    statusUpdatedAt: { type: Date },
+  },
+  { timestamps: true }
+);
 
 export default mongoose.models.Meter ||
   mongoose.model("Meter", MeterSchema, "meters");

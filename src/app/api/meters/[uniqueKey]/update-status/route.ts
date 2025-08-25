@@ -53,6 +53,7 @@ export async function PATCH(
       if (param.status !== newStatus) {
         param.status = newStatus;
         statusUpdated = true;
+        meter.statusUpdatedAt = new Date();
       }
     }
 
@@ -61,6 +62,7 @@ export async function PATCH(
       if (meter.comment !== trimmedComment) {
         meter.comment = trimmedComment;
         commentUpdated = true;
+        meter.commentUpdatedAt = new Date();
       }
     }
 
@@ -74,8 +76,14 @@ export async function PATCH(
     await meter.save();
 
     const responsePayload: any = { success: true };
-    if (statusUpdated) responsePayload.updatedStatus = newStatus;
-    if (commentUpdated) responsePayload.updatedComment = meter.comment;
+    if (statusUpdated){ 
+      responsePayload.updatedStatus = newStatus;
+      responsePayload.statusUpdatedAt = meter.statusUpdatedAt;
+    }
+    if (commentUpdated){
+      responsePayload.updatedComment = meter.comment;
+    responsePayload.commentUpdatedAt = meter.commentUpdatedAt;
+    }
 
     return NextResponse.json(responsePayload, { status: 200 });
   } catch (error) {

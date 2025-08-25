@@ -57,6 +57,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
     {}
   );
   const [meterComment, setMeterComment] = useState<string>("");
+const lastUpdatedToLocaleDate = new Date(lastUpdated).toLocaleString();
 
   
   const updateMeterData = async (updates: {
@@ -126,6 +127,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
           );
           setParameters(dynamicParams);
           setMeterComment(apiData.comment || "");
+          setLastUpdated(apiData.statusUpdatedAt)
         }
       } else {
         setParameters(data);
@@ -178,7 +180,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
         const newParameters = [...parameters];
         newParameters[originalIndex].status = newStatus;
         setParameters(newParameters);
-        setLastUpdated(getCurrentTime());
+        // setLastUpdated(getCurrentTime());
         await updateMeterData({
           paramName,
           newStatus,
@@ -277,7 +279,7 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
         </span> */}
         <span>
           <span className="font-medium">Last Updated:</span>{" "}
-          <span className="text-[#265F95]">{lastUpdated || "N/A"}</span>
+          <span className="text-[#265F95]">{lastUpdatedToLocaleDate || "N/A"}</span>
         </span>
         <span>
           <span className="font-medium">Last Fetched:</span>{" "}
