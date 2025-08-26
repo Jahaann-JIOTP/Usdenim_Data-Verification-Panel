@@ -23,8 +23,9 @@ export async function POST() {
       
       const parts = key.split("_");
       if (parts.length < 3) continue;
-      const uniqueKey = `${parts[0]}_${parts[1]}_${parts[2]}`;
-      const paramName = parts.slice(3).join("_");
+      const uniqueKey = `${parts[0]}_${parts[1]}_${parts[2]}_${parts[3]}_${parts[4]}`;
+      const paramName = parts.slice(5).join("_");
+
       if (!meterMap[uniqueKey]) {
         meterMap[uniqueKey] = new Set();
       }
@@ -35,13 +36,13 @@ export async function POST() {
     
     for (const [uniqueKey, paramsSet] of Object.entries(meterMap)) {
       const parameters = Array.from(paramsSet).map((p) => ({ paramName: p }));
+     
       const exists = await Meter.findOne({ unique_key: uniqueKey });
       if (!exists) {
         const meterNameDoc = await MeterName.findOne(
           { unique_key: uniqueKey },
           { meter_name: 1, location: 1 }
         );
-        
         await Meter.create({
           unique_key: uniqueKey,
           name: meterNameDoc?.meter_name || uniqueKey,

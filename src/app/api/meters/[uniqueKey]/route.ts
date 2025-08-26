@@ -18,6 +18,7 @@ export async function GET(
         { status: 400 }
       );
     }
+  
 
     const meterInfo = await MeterName.findOne(
       { unique_key: uniqueKey },
@@ -41,7 +42,7 @@ export async function GET(
         statusUpdatedAt: 1,
       }
     );
-
+      
     return NextResponse.json(
       {
         unique_key: meterInfo.unique_key,

@@ -59,53 +59,8 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
   const [meterComment, setMeterComment] = useState<string>("");
 const lastUpdatedToLocaleDate = new Date(lastUpdated).toLocaleString();
 
-  
-  const updateMeterData = async (updates: {
-    paramName?: string;
-    newStatus?: ParameterStatus;
-    comment?: string;
-  }) => {
-    try {
-      const response = await fetch(
-        `/api/meters/${uniqueKey}/update-status`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(updates),
-        }
-      );
-      if (!response.ok) throw new Error("Failed to update meter data");
-      return await response.json();
-    } catch (error) {
-      console.error("Error updating meter data:", error);
-      throw error;
-    }
-  };
-
-  const fetchRealTimeValues = async () => {
-    setIsRealTimeLoading(true);
-    try {
-      const response = await fetch("/api/usdenim-real-time-link");
-      if (!response.ok) throw new Error("Failed to fetch real-time data");
-      const data = await response.json();
-      setRealTimeValues(data);
-      setLastFetchedTime(new Date().toLocaleTimeString());
-    } catch (error) {
-      console.error("Error fetching real-time data:", error);
-    } finally {
-      setIsRealTimeLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchRealTimeValues();
-    const interval = setInterval(fetchRealTimeValues, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchParameters = async () => {
+  //===================fetch parameters=============================
+   const fetchParameters = async () => {
     if (!uniqueKey) return;
     setIsLoading(true);
     try {
@@ -139,9 +94,57 @@ const lastUpdatedToLocaleDate = new Date(lastUpdated).toLocaleString();
     }
   };
 
+  //===================Update status of param=============================
+  const updateMeterData = async (updates: {
+    paramName?: string;
+    newStatus?: ParameterStatus;
+    comment?: string;
+  }) => {
+    try {
+      const response = await fetch(
+        `/api/meters/${uniqueKey}/update-status`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updates),
+        }
+      );
+      if (!response.ok) throw new Error("Failed to update meter data");
+      fetchParameters()
+      return await response.json();
+    } catch (error) {
+      console.error("Error updating meter data:", error);
+      throw error;
+    }
+  };
+
+  const fetchRealTimeValues = async () => {
+    setIsRealTimeLoading(true);
+    try {
+      const response = await fetch("/api/usdenim-real-time-link");
+      if (!response.ok) throw new Error("Failed to fetch real-time data");
+      const data = await response.json();
+      setRealTimeValues(data);
+      setLastFetchedTime(new Date().toLocaleTimeString());
+    } catch (error) {
+      console.error("Error fetching real-time data:", error);
+    } finally {
+      setIsRealTimeLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRealTimeValues();
+    const interval = setInterval(fetchRealTimeValues, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+ 
   useEffect(() => {
     fetchParameters();
-  }, [uniqueKey, statusFilter]);
+  }, [uniqueKey, statusFilter,lastUpdated]);
 
   
 
