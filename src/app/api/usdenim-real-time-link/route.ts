@@ -49,7 +49,8 @@ export async function GET() {
 
     // Merge responses (data2 can overwrite data1 if keys overlap)
     const mergedData = { ...data1, ...data2 };
-
+console.log("data 1", data1)
+console.log("data 1", data2)
     return new Response(JSON.stringify(mergedData), {
       status: 200,
       headers: { "Content-Type": "application/json" },
