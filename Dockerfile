@@ -3,38 +3,43 @@ FROM node:20-slim AS builder
 
 WORKDIR /app
 
-# Copy package.json and package-lock.json first to leverage Docker caching
+# Copy package.json and package-lock.json to leverage Docker cache
 COPY package*.json ./
 
-# Install all dependencies (including dev dependencies for building the app)
+# Install the latest npm version
+RUN npm install -g npm@latest
+
+# Install all dependencies including dev dependencies for building
 RUN npm install --legacy-peer-deps
 
-# Copy the rest of the project files
+# Copy the entire project
 COPY . .
 
 # Build the Next.js project
 RUN npm run build
 
-# Create a production image
+# Create a minimal production image
 FROM node:20-slim AS runner
 
 WORKDIR /app
 
-# Set NODE_ENV to production
+# Set production environment variable
 ENV NODE_ENV=production
 
-# Copy only the build artifacts from the builder stage
-COPY --from=builder /app/.next/static ./.next/static
+# Copy entire .next folder from builder (✅ FIXED HERE)
+COPY --from=builder /app/.next ./.next
+
+# Copy public assets
 COPY --from=builder /app/public ./public
 
-# Expose the port the app runs on
-EXPOSE 3000
-
-# Copy package.json again and install all dependencies (including 'next')
+# Copy required config files
 COPY package*.json ./
 
-# Install all dependencies (including dev dependencies)
-RUN npm install --legacy-peer-deps
+# Install only production dependencies
+RUN npm install --only=production --legacy-peer-deps
+
+# Expose the port Next.js runs on
+EXPOSE 3000
 
 # Start the production server
 CMD ["npm", "run", "start"]
