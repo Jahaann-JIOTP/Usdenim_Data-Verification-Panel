@@ -44,12 +44,15 @@ const MeterParameterList: React.FC<MeterParameterListProps> = ({
 }) => {
   const [parameters, setParameters] = useState<Parameter[]>(data);
   const [lastUpdated, setLastUpdated] = useState<string>("");
+
   const [comments, setComments] = useState<Record<string, string>>({});
   const [comment, setComment] = useState<string>("");
   const [isEditingComment, setIsEditingComment] = useState<boolean>(false);
   const [realTimeValues, setRealTimeValues] = useState<Record<string, number>>(
     {}
   );
+
+
   const [lastFetchedTime, setLastFetchedTime] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRealTimeLoading, setIsRealTimeLoading] = useState<boolean>(true);
@@ -82,7 +85,7 @@ const lastUpdatedToLocaleDate = new Date(lastUpdated).toLocaleString();
           );
           setParameters(dynamicParams);
           setMeterComment(apiData.comment || "");
-          setLastUpdated(apiData.statusUpdatedAt)
+          setLastUpdated(apiData.updatedAt)
         }
       } else {
         setParameters(data);
@@ -127,6 +130,7 @@ const lastUpdatedToLocaleDate = new Date(lastUpdated).toLocaleString();
       if (!response.ok) throw new Error("Failed to fetch real-time data");
       const data = await response.json();
       setRealTimeValues(data);
+      
       setLastFetchedTime(new Date().toLocaleTimeString());
     } catch (error) {
       console.error("Error fetching real-time data:", error);
@@ -148,14 +152,14 @@ const lastUpdatedToLocaleDate = new Date(lastUpdated).toLocaleString();
 
   
 
-  const filteredParameters = parameters.filter((param) => {
-    const matchesSearch = param.param
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    const matchesStatus = !statusFilter || param.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
+const filteredParameters = parameters.filter((param) => {
+  const paramName = param?.param || ""; // fallback to empty string
+  const matchesSearch = paramName
+    .toLowerCase()
+    .includes(searchQuery?.toLowerCase() || "");
+  const matchesStatus = !statusFilter || param.status === statusFilter;
+  return matchesSearch && matchesStatus;
+});
   
 
   useEffect(() => {
@@ -245,12 +249,26 @@ const lastUpdatedToLocaleDate = new Date(lastUpdated).toLocaleString();
     }
   };
 
-  const getRealTimeValue = (paramName: string) => {
-    const key = `${uniqueKey}_${paramName}`.replace(/\s+/g, "_");
-    return realTimeValues[key] !== undefined
-      ? realTimeValues[key].toFixed(2)
-      : "N/A";
-  };
+ const getRealTimeValue = (paramName: string) => {
+  // Special case: hard-coded mapping for USG_DP1_PS1_MRCZ1_PSL
+  if (uniqueKey === "USG_DP1_PS1_MRCZ1_PSL") {
+    if (paramName === "PSB1_PSL_COUNTER_VALUE") {
+      return realTimeValues["USG_DP1_PS1_PSB1_PSL_COUNTER_VALUE"] !== undefined
+        ? realTimeValues["USG_DP1_PS1_PSB1_PSL_COUNTER_VALUE"].toFixed(2)
+        : "N/A";
+    }
+    if (paramName === "MRCZ1_PSL_COUNTER_VALUE") {
+      return realTimeValues["USG_DP1_PS1_MRCZ1_PSL_COUNTER_VALUE"] !== undefined
+        ? realTimeValues["USG_DP1_PS1_MRCZ1_PSL_COUNTER_VALUE"].toFixed(2)
+        : "N/A";
+    }
+  }
+    // Default dynamic logic for all other meters/params
+  const key = `${uniqueKey}_${paramName}`.replace(/\s+/g, "_");
+  return realTimeValues[key] !== undefined
+    ? realTimeValues[key].toFixed(2)
+    : "N/A";
+};
 
   return (
     <div className="bg-white px-2 sm:px-4 md:px-7 py-4">

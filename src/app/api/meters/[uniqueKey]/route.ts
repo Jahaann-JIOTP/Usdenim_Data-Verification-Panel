@@ -40,6 +40,8 @@ export async function GET(
         comment: 1,
         commentUpdatedAt: 1,
         statusUpdatedAt: 1,
+        createdAt:1,
+        updatedAt:1
       }
     );
       
@@ -54,6 +56,8 @@ export async function GET(
         commentUpdatedAt: meterData?.commentUpdatedAt || null,
 
         statusUpdatedAt: meterData?.statusUpdatedAt || null,
+        createdAt:meterData?.createdAt||null,
+        updatedAt:meterData?.updatedAt||null
       },
       { status: 200 }
     );
