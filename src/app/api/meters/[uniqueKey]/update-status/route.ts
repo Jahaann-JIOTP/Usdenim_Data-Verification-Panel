@@ -36,9 +36,9 @@ export async function PATCH(
       );
     }
 
-    let statusUpdated = false;
-    let commentUpdated = false;
+    let updatedFields: any = {};
 
+    // ✅ Update parameter status with per-parameter updatedAt
     if (paramName && newStatus) {
       const param = meter.parameters.find(
         (p: { paramName: string }) => p.paramName === paramName
@@ -50,42 +50,33 @@ export async function PATCH(
           { status: 404 }
         );
       }
+
       if (param.status !== newStatus) {
         param.status = newStatus;
-        statusUpdated = true;
-        meter.statusUpdatedAt = new Date();
+        param.updatedAt = new Date(); // only this param updated
+        updatedFields = {
+          paramName: param.paramName,
+          newStatus: param.status,
+          updatedAt: param.updatedAt,
+        };
       }
     }
 
+    // Update meter-level comment (optional)
     if (typeof comment === "string") {
       const trimmedComment = comment.trim();
       if (meter.comment !== trimmedComment) {
         meter.comment = trimmedComment;
-        commentUpdated = true;
-        meter.commentUpdatedAt = new Date();
+        updatedFields.comment = meter.comment;
       }
-    }
-
-    if (!statusUpdated && !commentUpdated) {
-      return NextResponse.json(
-        { success: false, message: "Nothing to update" },
-        { status: 200 }
-      );
     }
 
     await meter.save();
 
-    const responsePayload: any = { success: true };
-    if (statusUpdated){ 
-      responsePayload.updatedStatus = newStatus;
-      responsePayload.statusUpdatedAt = meter.statusUpdatedAt;
-    }
-    if (commentUpdated){
-      responsePayload.updatedComment = meter.comment;
-    responsePayload.commentUpdatedAt = meter.commentUpdatedAt;
-    }
-
-    return NextResponse.json(responsePayload, { status: 200 });
+    return NextResponse.json(
+      { success: true, updated: updatedFields },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("Error updating parameter status and comment:", error);
     return NextResponse.json(

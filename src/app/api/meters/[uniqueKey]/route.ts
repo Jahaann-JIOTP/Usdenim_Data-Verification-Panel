@@ -18,8 +18,8 @@ export async function GET(
         { status: 400 }
       );
     }
-  
 
+    // Meter ka basic info (name + location)
     const meterInfo = await MeterName.findOne(
       { unique_key: uniqueKey },
       { _id: 0, meter_name: 1, location: 1, unique_key: 1 }
@@ -32,19 +32,18 @@ export async function GET(
       );
     }
 
+    // Meter data (sirf required fields)
     const meterData = await Meter.findOne(
       { unique_key: uniqueKey },
       {
         _id: 0,
         parameters: 1,
         comment: 1,
-        commentUpdatedAt: 1,
-        statusUpdatedAt: 1,
-        createdAt:1,
-        updatedAt:1
+        createdAt: 1,
+        updatedAt: 1,
       }
     );
-      
+
     return NextResponse.json(
       {
         unique_key: meterInfo.unique_key,
@@ -52,12 +51,8 @@ export async function GET(
         location: meterInfo.location,
         comment: meterData?.comment || "",
         parameters: meterData?.parameters || [],
-
-        commentUpdatedAt: meterData?.commentUpdatedAt || null,
-
-        statusUpdatedAt: meterData?.statusUpdatedAt || null,
-        createdAt:meterData?.createdAt||null,
-        updatedAt:meterData?.updatedAt||null
+        createdAt: meterData?.createdAt || null,
+        updatedAt: meterData?.updatedAt || null,
       },
       { status: 200 }
     );

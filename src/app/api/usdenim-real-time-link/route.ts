@@ -1,12 +1,12 @@
 export async function GET() {
   try {
-    const response = await fetch("http://13.234.241.103:1880/usdenim");
+    const response = await fetch("http://13.234.241.103:1880/prime_cold1");
 
     if (!response.ok) {
-      return new Response(
-        JSON.stringify({ error: "Failed to fetch data" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Failed to fetch data" }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     const data = (await response.json()) as unknown;
@@ -38,7 +38,7 @@ export async function GET() {
 //         JSON.stringify({
 //           error: "Failed to fetch data",
 //           status1: res1.status,
-         
+
 //         }),
 //         { status: 500, headers: { "Content-Type": "application/json" } }
 //       );

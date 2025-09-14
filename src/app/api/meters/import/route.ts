@@ -6,43 +6,60 @@ import { NextResponse } from "next/server";
 export async function POST() {
   try {
     await connectDB();
-    
-    const response = await fetch("http://13.234.241.103:1880/usdenim");
+
+    const response = await fetch("http://13.234.241.103:1880/prime_cold1");
     if (!response.ok) {
       return NextResponse.json(
         { error: `Failed to fetch: ${response.status}` },
         { status: response.status }
       );
     }
-    
+
     const liveData = await response.json();
     const meterMap: Record<string, Set<string>> = {};
-    
+
+    // 🔹 Step 1: Split keys into uniqueKey and parameters
     for (const key of Object.keys(liveData)) {
-      if (["Time", "timestamp", "UNIXtimestamp"].includes(key)) continue;
-      
+      if (
+        [
+          "Time",
+          "timestamp",
+          "UNIXtimestamp",
+          "PLC_DATE_AND_TIME",
+          "_id",
+          "_msgid",
+        ].includes(key)
+      )
+        continue;
+
       const parts = key.split("_");
-      if (parts.length < 3) continue;
-      const uniqueKey = `${parts[0]}_${parts[1]}_${parts[2]}_${parts[3]}_${parts[4]}`;
-      const paramName = parts.slice(5).join("_");
+      if (parts.length < 2) continue;
+
+      const uniqueKey = parts[0]; // just U1, U2, etc.
+      const paramName = parts.slice(1).join("_");
 
       if (!meterMap[uniqueKey]) {
         meterMap[uniqueKey] = new Set();
       }
       meterMap[uniqueKey].add(paramName);
     }
-    
+
     let insertedCount = 0;
-    
+    let updatedCount = 0;
+
+    // 🔹 Step 2: Insert or Update Meters
     for (const [uniqueKey, paramsSet] of Object.entries(meterMap)) {
       const parameters = Array.from(paramsSet).map((p) => ({ paramName: p }));
-     
-      const exists = await Meter.findOne({ unique_key: uniqueKey });
-      if (!exists) {
+
+      const meter = await Meter.findOne({ unique_key: uniqueKey });
+
+      if (!meter) {
+        // New meter
         const meterNameDoc = await MeterName.findOne(
           { unique_key: uniqueKey },
           { meter_name: 1, location: 1 }
         );
+
         await Meter.create({
           unique_key: uniqueKey,
           name: meterNameDoc?.meter_name || uniqueKey,
@@ -50,14 +67,32 @@ export async function POST() {
           parameters,
           comment: "",
         });
-        
+
         insertedCount++;
+      } else {
+        // Existing meter → update only missing parameters
+        let updated = false;
+
+        for (const p of parameters) {
+          const exists = meter.parameters.find(
+            (x: { paramName: string }) => x.paramName === p.paramName
+          );
+          if (!exists) {
+            //  Add new parameter with default status
+            meter.parameters.push({ paramName: p.paramName });
+            updated = true;
+          }
+        }
+
+        if (updated) {
+          await meter.save();
+          updatedCount++;
+        }
       }
     }
-  
 
     return NextResponse.json(
-      { message: `Inserted ${insertedCount} new meters` },
+      { message: `Inserted ${insertedCount}, Updated ${updatedCount}` },
       { status: 201 }
     );
   } catch (error) {
@@ -68,87 +103,3 @@ export async function POST() {
     );
   }
 }
-///////////////////////////////==================================================
-// import { connectDB } from "@/lib/mongodb";
-// import Meter from "@/models/Meter";
-// import MeterName from "@/models/MeterName";
-// import { NextResponse } from "next/server";
-
-// export async function POST() {
-//   try {
-//     await connectDB();
-
-//     // ✅ Call both endpoints in parallel
-//     const [res1, res2] = await Promise.all([
-//       fetch("http://13.234.241.103:1880/usdenim"),
-//       fetch("http://13.234.241.103:1880/usdenim1"),
-//     ]);
-
-//     if (!res1.ok || !res2.ok) {
-//       return NextResponse.json(
-//         {
-//           error: `Failed to fetch: usdenim=${res1.status}, usdenim1=${res2.status}`,
-//         },
-//         { status: 502 }
-//       );
-//     }
-
-//     // ✅ Merge responses
-//     const [data1, data2] = await Promise.all([res1.json(), res2.json()]);
-//     const liveData = { ...data1, ...data2 };
-
-//     // ✅ Extract meter parameters
-//     const meterMap: Record<string, Set<string>> = {};
-
-//     for (const key of Object.keys(liveData)) {
-//       if (["Time", "timestamp", "UNIXtimestamp"].includes(key)) continue;
-
-//       const parts = key.split("_");
-//       if (parts.length < 5) continue;
-
-//       const uniqueKey = `${parts[0]}_${parts[1]}_${parts[2]}_${parts[3]}_${parts[4]}`;
-//       const paramName = parts.slice(5).join("_");
-
-//       if (!meterMap[uniqueKey]) {
-//         meterMap[uniqueKey] = new Set();
-//       }
-//       meterMap[uniqueKey].add(paramName);
-//     }
-
-//     // ✅ Insert new meters if not already present
-//     let insertedCount = 0;
-
-//     for (const [uniqueKey, paramsSet] of Object.entries(meterMap)) {
-//       const parameters = Array.from(paramsSet).map((p) => ({ paramName: p }));
-
-//       const exists = await Meter.findOne({ unique_key: uniqueKey });
-//       if (!exists) {
-//         const meterNameDoc = await MeterName.findOne(
-//           { unique_key: uniqueKey },
-//           { meter_name: 1, location: 1 }
-//         );
-
-//         await Meter.create({
-//           unique_key: uniqueKey,
-//           name: meterNameDoc?.meter_name || uniqueKey,
-//           location: meterNameDoc?.location || "Not Available",
-//           parameters,
-//           comment: "",
-//         });
-
-//         insertedCount++;
-//       }
-//     }
-
-//     return NextResponse.json(
-//       { message: `Inserted ${insertedCount} new meters` },
-//       { status: 201 }
-//     );
-//   } catch (error) {
-//     console.error("Error importing meters:", error);
-//     return NextResponse.json(
-//       { error: "Failed to import meters" },
-//       { status: 500 }
-//     );
-//   }
-// }

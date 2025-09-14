@@ -24,8 +24,8 @@ export default function Navbar() {
       {/* Right Logo */}
       <div className="w-35 h-12 cursor-pointer">
         <Image
-          src="/assets/us-denim-logo-mobile.png" 
-          alt="US Denim logo"
+          src="/" 
+          alt="Prime Cold Logo"
           width={130}
           height={60}
           className="object-contain"
